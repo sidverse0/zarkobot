@@ -6,8 +6,7 @@ import hashlib
 import random
 import string
 import os
-import asyncpg
-from datetime import datetime
+from datetime import datetime, timedelta
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     Application,
@@ -17,31 +16,43 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+from pymongo import MongoClient
+from bson import ObjectId
 
 # ==== CONFIG ====
-# Apne bot ka token yahan daalein ya environment variable se lein
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8116705267:AAGVx7azJJMndrXHwzoMnx7angKd0COJWjg")
-# Render.com se mila DATABASE_URL environment variable se liya jayega
-DATABASE_URL = os.environ.get("DATABASE_URL")
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8116705267:AAGVx7azJJMndrXHwzoMnx7angKd0COJWjg")
+CHANNEL_USERNAME = os.environ.get('CHANNEL_USERNAME', "@zarkoworld")   # Main channel
+CHANNEL_USERNAME_2 = os.environ.get('CHANNEL_USERNAME_2', "@chandhackz_78")  # Second channel
+OWNER_USERNAME = os.environ.get('OWNER_USERNAME', "@pvt_s1n")    # Your username
+ADMIN_ID = int(os.environ.get('ADMIN_ID', 7975903577))  # Your user ID
 
-CHANNEL_USERNAME = "@chandhackz_78"   # Main channel
-CHANNEL_USERNAME_2 = "@zarkoworld"  # Second channel
-OWNER_USERNAME = "@pvt_s1n"    # Aapka username
+LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8176139267:btRibc7y")
+API_URL = os.environ.get('API_URL', "https://leakosintapi.com/")
 
-LEAKOSINT_API_TOKEN = os.environ.get("LEAKOSINT_API_TOKEN", "8176139267:btRibc7y")
-API_URL = "https://leakosintapi.com/"
+# MongoDB Connection
+MONGO_URI = os.environ.get('MONGO_URI', "mongodb+srv://Sidverse0:sidverse18@cluster0.50emoak.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
-AUDIT_LOG_FILE = "audit.log"
+# Connect to MongoDB
+try:
+    client = MongoClient(MONGO_URI)
+    db = client['zarkobot']
+    users_collection = db['users']
+    audit_collection = db['audit_logs']
+    print("Connected to MongoDB successfully!")
+except Exception as e:
+    print(f"Error connecting to MongoDB: {e}")
+    exit(1)
 
 # ==== Security Functions ====
 def generate_user_hash(user_id):
-    """User identification ke liye 6-digit alphanumeric hash generate karein"""
-    random.seed(user_id)
+    """Generate a 6-digit alphanumeric hash for user identification"""
+    # Create a consistent but unique 6-digit code for each user
+    random.seed(user_id)  # Seed with user_id for consistency
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(6))
 
 def log_audit_event(user_id, event_type, details):
-    """Monitoring ke liye security events log karein"""
+    """Log security events for monitoring"""
     timestamp = datetime.now().isoformat()
     user_hash = generate_user_hash(user_id)
     
@@ -54,121 +65,120 @@ def log_audit_event(user_id, event_type, details):
     }
     
     try:
-        with open(AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        audit_collection.insert_one(log_entry)
     except Exception as e:
         print(f"Audit log error: {e}")
 
-# ==== Database Functions ====
-async def init_db(app: Application):
-    """Database connection pool banayein aur table ensure karein"""
+# ==== User Data Functions ====
+def load_users():
+    """Get all users from MongoDB"""
     try:
-        pool = await asyncpg.create_pool(DATABASE_URL)
-        app.bot_data["pool"] = pool
-        async with pool.acquire() as connection:
-            await connection.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    user_id BIGINT PRIMARY KEY,
-                    credits INTEGER DEFAULT 0,
-                    name TEXT,
-                    last_update TIMESTAMPTZ,
-                    initial_credits_given BOOLEAN DEFAULT FALSE,
-                    join_date DATE,
-                    user_hash TEXT,
-                    verification_history JSONB,
-                    last_verified TIMESTAMPTZ
-                )
-            ''')
-        print("Database connection pool initialized and table ensured.")
+        users = {}
+        for user in users_collection.find():
+            users[str(user["_id"])] = user
+        return users
     except Exception as e:
-        print(f"FATAL: Database connection failed: {e}")
-        # Agar DB connect na ho to bot ko band kar dein
-        os._exit(1)
+        print(f"Error loading users: {e}")
+        return {}
 
-
-async def get_user(pool, user_id):
-    """Database se user data fetch karein"""
-    async with pool.acquire() as connection:
-        user_record = await connection.fetchrow("SELECT * FROM users WHERE user_id = $1", user_id)
-        return dict(user_record) if user_record else None
-
-async def upsert_user(pool, user_id, name, credits=None, last_verified=None, initial_credits_given=None):
-    """User ko create ya update karein (UPSERT operation)"""
-    user_hash = generate_user_hash(user_id)
-    async with pool.acquire() as connection:
-        # Pehle se user hai ya nahi, check karein
-        existing_user = await get_user(pool, user_id)
-        
-        if existing_user:
-            # User hai, to update karein
-            update_fields = {"name": name, "last_update": datetime.now()}
-            if credits is not None:
-                update_fields["credits"] = credits
-            if last_verified is not None:
-                update_fields["last_verified"] = last_verified
-            
-            set_clauses = [f"{key} = ${i+2}" for i, key in enumerate(update_fields.keys())]
-            query = f"UPDATE users SET {', '.join(set_clauses)} WHERE user_id = $1"
-            await connection.execute(query, user_id, *update_fields.values())
-        else:
-            # Naya user, to insert karein
-            await connection.execute(
-                """
-                INSERT INTO users (user_id, name, credits, join_date, user_hash, last_update, last_verified, initial_credits_given, verification_history)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                """,
-                user_id,
-                name,
-                credits if credits is not None else 2, # Default 2 credits
-                datetime.now().date(),
-                user_hash,
-                datetime.now(),
-                last_verified,
-                initial_credits_given if initial_credits_given is not None else True,
-                json.dumps([]) # Initial empty history
+def save_users(users):
+    """Save users to MongoDB"""
+    try:
+        for user_id, user_data in users.items():
+            users_collection.update_one(
+                {"_id": user_id},
+                {"$set": user_data},
+                upsert=True
             )
-        
-        log_audit_event(user_id, "USER_UPSERT", f"Name: {name}, Credits: {credits}")
-        return await get_user(pool, user_id)
+    except Exception as e:
+        print(f"Error saving users: {e}")
 
-async def add_verification_record(pool, user_id, success, details):
-    """User ki verification history mein naya record add karein"""
-    async with pool.acquire() as connection:
-        user = await get_user(pool, user_id)
-        if not user:
-            return False
-            
-        history = json.loads(user.get("verification_history", "[]")) if isinstance(user.get("verification_history"), str) else user.get("verification_history", [])
-        
-        record = {
-            "timestamp": datetime.now().isoformat(),
-            "success": success,
-            "details": details
+def update_user(user_id, credits=None, name=None, last_verified=None):
+    uid = str(user_id)
+    
+    # Get existing user or create new
+    user_data = users_collection.find_one({"_id": uid})
+    
+    if not user_data:
+        user_data = {
+            "_id": uid,
+            "credits": 0,
+            "name": name or "Unknown", 
+            "last_update": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+            "initial_credits_given": False,
+            "join_date": datetime.now().strftime("%Y-%m-%d"),
+            "user_hash": generate_user_hash(user_id),
+            "verification_history": [],
+            "last_verified": None
         }
-        history.append(record)
+        users_collection.insert_one(user_data)
+    else:
+        # Update fields if provided
+        update_data = {}
+        if credits is not None:
+            update_data["credits"] = credits
+        if name is not None:
+            update_data["name"] = name
+        if last_verified is not None:
+            update_data["last_verified"] = last_verified
+            
+        update_data["last_update"] = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
         
-        # Sirf aakhri 10 records rakhein
-        history = history[-10:]
-        
-        await connection.execute(
-            "UPDATE users SET verification_history = $1 WHERE user_id = $2",
-            json.dumps(history), user_id
-        )
-        return True
+        if update_data:
+            users_collection.update_one(
+                {"_id": uid},
+                {"$set": update_data}
+            )
+            user_data.update(update_data)
+    
+    # Log the update
+    log_audit_event(user_id, "USER_UPDATE", f"Credits: {user_data.get('credits', 0)}, Name: {user_data.get('name', 'Unknown')}")
+    
+    return user_data
 
-async def get_admin_stats(pool):
-    """Admin ke liye stats fetch karein"""
-    async with pool.acquire() as connection:
-        stats = await connection.fetchrow("SELECT COUNT(*) as total_users, SUM(credits) as total_credits FROM users")
-        return dict(stats) if stats else {"total_users": 0, "total_credits": 0}
+def add_verification_record(user_id, success, details):
+    """Add a verification attempt to user's history"""
+    uid = str(user_id)
+    
+    user_data = users_collection.find_one({"_id": uid})
+    if not user_data:
+        return False
+    
+    record = {
+        "timestamp": datetime.now().isoformat(),
+        "success": success,
+        "details": details
+    }
+    
+    # Update verification history
+    users_collection.update_one(
+        {"_id": uid},
+        {
+            "$push": {
+                "verification_history": {
+                    "$each": [record],
+                    "$slice": -10  # Keep only last 10 records
+                }
+            }
+        }
+    )
+    
+    return True
 
 # ==== Check Channel Membership ====
 async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id):
     try:
+        # Check first channel
         member1 = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
+        # Check second channel
         member2 = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME_2, user_id=user_id)
+        
         is_member = member1.status != "left" and member2.status != "left"
-        log_audit_event(user_id, "MEMBERSHIP_CHECK", f"Channel1: {member1.status}, Channel2: {member2.status}, Result: {is_member}")
+        
+        # Log membership check
+        log_audit_event(user_id, "MEMBERSHIP_CHECK", 
+                       f"Channel1: {member1.status}, Channel2: {member2.status}, Result: {is_member}")
+        
         return is_member
     except Exception as e:
         error_msg = f"Error checking membership: {e}"
@@ -178,7 +188,12 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, u
 
 # ==== API Query ====
 def query_leakosint(query: str):
-    payload = {"token": LEAKOSINT_API_TOKEN, "request": query, "limit": 500, "lang": "en"}
+    payload = {
+        "token": LEAKOSINT_API_TOKEN,
+        "request": query,
+        "limit": 500,
+        "lang": "en"
+    }
     try:
         resp = requests.post(API_URL, json=payload, timeout=30)
         return resp.json()
@@ -194,7 +209,6 @@ def format_results(resp):
     msg = ""
     for db, data in resp.get("List", {}).items():
         for row in data.get("Data", []):
-            # ... (formatting logic same as before)
             name = row.get("FatherName", "N/A")
             father = row.get("FullName", "N/A")
             mobile = row.get("Phone", "N/A")
@@ -229,24 +243,23 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
         user_id = update.effective_user.id
         
     if not user_data:
-        pool = context.bot_data["pool"]
-        user_data = await get_user(pool, user_id)
+        user_data = users_collection.find_one({"_id": str(user_id)})
+        if not user_data:
+            user_data = {"credits": 0, "last_update": "N/A", "name": "Unknown"}
     
-    if not user_data:
-        user_data = {"credits": 0, "last_update": "N/A", "name": "Unknown", "join_date": "N/A"}
-
     name = user_data.get("name", "Unknown")
     credits = user_data.get("credits", 0)
-    last_update = user_data.get("last_update").strftime("%Y-%m-%d %I:%M:%S %p") if user_data.get("last_update") else "N/A"
-    join_date = user_data.get("join_date").strftime("%Y-%m-%d") if user_data.get("join_date") else "N/A"
+    last_update = user_data.get("last_update", "N/A")
+    join_date = user_data.get("join_date", "N/A")
     user_hash = user_data.get("user_hash", generate_user_hash(user_id))
     
+    # Create profile message
     profile_msg = f"""
 👤 Nᴀᴍᴇ ▶ {name} 
 ••••••••••••••••••••••••••
 🆔 Usᴇʀ ɪᴅ ▶ {user_id}
 ••••••••••••••••••••••••••
-🆔 Usᴇʀ Hᴀsʜ ▶ {user_hash}
+🆔 Usᴇʀ ʜᴀsʜ ▶ {user_hash}
 ••••••••••••••••••••••••••
 💵 Cʀᴇᴅɪᴛ ▶ {credits} 💎
 ••••••••••••••••••••••••••
@@ -255,6 +268,7 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 ⌚️ Lᴀsᴛ Uᴘᴅᴀᴛᴇᴅ ▶ {last_update}
 ••••••••••••••••••••••••••
 """
+    # Create buttons
     keyboard = [
         [InlineKeyboardButton("❓ Help", callback_data="help"),
          InlineKeyboardButton("🔍 Search", callback_data="search_prompt")],
@@ -273,6 +287,7 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
+    # Check membership first
     is_member = await check_membership(update, context, user_id)
     if not is_member:
         keyboard = [
@@ -286,7 +301,46 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     buy_message = """
 ╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]      
-... (buy message content same as before) ...
+
+💎 Cʀᴇᴅɪᴛ Pʟᴀɴꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Sᴛᴀʀᴛᴇʀ Pᴀᴄᴋ 🎯 
+✨10 Cʀᴇᴅɪᴛꜱ → ₹25 
+🎁Bᴏɴᴜꜱ: +2 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Bᴇꜱᴛ ꜰᴏʀ ᴛᴇꜱᴛɪɴɢ ᴛʜᴇ ᴀᴘᴘ
+━━━━━━━━━━━━━━━━━━━━━
+
+2️⃣ Vᴀʟᴜᴇ Pᴀᴄᴋ 📦 
+✨25 Cʀᴇᴅɪᴛꜱ → ₹50 
+🎁Bᴏɴᴜꜱ: +5 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Pᴏᴘᴜʟᴀʀ ᴄʜᴏɪᴄᴇ ꜰᴏʀ ɴᴇᴡ ᴜꜱᴇʀꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+3️⃣ Sᴍᴀʀᴛ Sᴀᴠᴇʀ Pᴀᴄᴋ 🪙 
+✨50 Cʀᴇᴅɪᴛꜱ → ₹90 
+🎁Bᴏɴᴜꜱ: +15 Fʀᴇᴅɪᴛꜱ 
+💡Mᴏʀᴇ ᴘʜᴀᴛɪᴍᴇ, ᴍᴏʀᴇ ʀᴇᴡᴀʀᴅꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+4️⃣ Pʀᴏ Pᴀᴄᴋ 🚀 
+✨75 Cʀᴇᴅɪᴛꜱ → ₹120 
+🎁Bᴏɴᴜꜱ: +25 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Bᴇꜱᴛ ꜰᴏʀ ʀᴇɢᴜʟᴀʀ ᴜꜱᴇʀꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+5️⃣ Mᴇɢᴀ Pᴀᴄᴋ 👑 
+✨100 Cʀᴇᴅɪᴛꜱ → ₹150 
+🎁Bᴏɴᴜꜱ: +40 Fʀᴇᴅɪᴛꜱ 
+💡Mᴀxɪᴍᴜᴍ ᴠᴀʟᴜᴇ & ꜱᴀᴠɪɴɢꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+🔌 Aᴘɪ Pᴜʀᴄʜᴀꜱᴇ
+━━━━━━━━━━━━━━━━━━━━━
+
+🕒 Bᴜʏ Aᴘɪ — 1 Mᴏɴᴛʜ — ₹399/-
+🔒Bᴜʏ Aᴘɪ — Lɪꜰᴇᴛɪᴍᴇ — ₹1999/-
+ℹ️Cᴏɴᴛᴀᴄᴛ Oᴡɴᴇʀ ꜰᴏʀ ᴍᴏʀᴇ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ: @pvt_s1n
 """
 
     keyboard = [
@@ -299,46 +353,223 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==== Fast Animated Spinner ====
 async def show_spinner(update, context, message):
-    spinner_frames = ["𓆗 •••••••••••••••••••••••••• Dᴏɴᴇ "]
+    spinner_frames = [
+        "𓆗 •••••••••••••••••••••••••• Dᴏɴᴇ "
+    ]
+    
     msg = await message.reply_text(spinner_frames[0])
-    await asyncio.sleep(0.5)
+    
+    for frame in spinner_frames:
+        await asyncio.sleep(0.5)
+        try:
+            await msg.edit_text(frame)
+        except:
+            break
+    
     return msg
+
+# ==== ADMIN FUNCTIONS ====
+async def is_admin(user_id: int) -> bool:
+    """Check if user is admin"""
+    return user_id == ADMIN_ID
+
+async def addcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Add credits to a user"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Aᴄᴄᴇꜱꜱ Dᴇɴɪᴇᴅ.")
+        return
+
+    if len(context.args) != 2:
+        await update.message.reply_text("❌ Uꜱᴀɢᴇ: /addcredits <user_id> <amount>")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        amount = int(context.args[1])
+    except ValueError:
+        await update.message.reply_text("❌ Iɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ID ᴏʀ ᴀᴍᴏᴜɴᴛ")
+        return
+
+    user_data = users_collection.find_one({"_id": str(target_user_id)})
+    
+    if not user_data:
+        await update.message.reply_text("❌ Uꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ")
+        return
+
+    new_credits = user_data.get("credits", 0) + amount
+    users_collection.update_one(
+        {"_id": str(target_user_id)},
+        {"$set": {"credits": new_credits}}
+    )
+    
+    log_audit_event(user_id, "ADMIN_ADD_CREDITS", 
+                   f"Target: {target_user_id}, Amount: {amount}, New Balance: {new_credits}")
+    
+    await update.message.reply_text(f"✅ Aᴅᴅᴇᴅ {amount} ᴄʀᴇᴅɪᴛꜱ ᴛᴏ ᴜꜱᴇʀ {target_user_id}\nNᴇᴡ ʙᴀʟᴀɴᴄᴇ: {new_credits} 💎")
+
+async def setcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Set user's credits to specific amount"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Aᴄᴄᴇꜱꜱ Dᴇɴɪᴇᴅ.")
+        return
+
+    if len(context.args) != 2:
+        await update.message.reply_text("❌ Uꜱᴀɢᴇ: /setcredits <user_id> <amount>")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        amount = int(context.args[1])
+    except ValueError:
+        await update.message.reply_text("❌ Iɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ID ᴏʀ ᴀᴍᴏᴜɴᴛ")
+        return
+
+    user_data = users_collection.find_one({"_id": str(target_user_id)})
+    
+    if not user_data:
+        await update.message.reply_text("❌ Uꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ")
+        return
+
+    users_collection.update_one(
+        {"_id": str(target_user_id)},
+        {"$set": {"credits": amount}}
+    )
+    
+    log_audit_event(user_id, "ADMIN_SET_CREDITS", 
+                   f"Target: {target_user_id}, New Amount: {amount}")
+    
+    await update.message.reply_text(f"✅ Sᴇᴛ ᴄʀᴇᴅɪᴛꜱ ᴏꜰ ᴜꜱᴇʀ {target_user_id} ᴛᴏ {amount} 💎")
+
+async def userinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get user information"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Aᴄᴄᴇꜱꜱ Dᴇɴɪᴇᴅ.")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Uꜱᴀɢᴇ: /userinfo <user_id>")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Iɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ID")
+        return
+
+    user_data = users_collection.find_one({"_id": str(target_user_id)})
+    
+    if not user_data:
+        await update.message.reply_text("❌ Uꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ")
+        return
+
+    info_msg = f"""
+╏╠══[𝍖𝍖𝍖 ＵＳＥＲ ＩＮＦＯ 𝍖𝍖𝍖]    
+
+👤 Nᴀᴍᴇ: {user_data.get('name', 'N/A')}
+🆔 Usᴇʀ ID: {target_user_id}
+🆔 Usᴇʀ Hᴀsʜ: {user_data.get('user_hash', 'N/A')}
+💎 Cʀᴇᴅɪᴇᴛꜱ: {user_data.get('credits', 0)}
+📅 Jᴏɪɴ Dᴀᴛᴇ: {user_data.get('join_date', 'N/A')}
+⌚️ Lᴀsᴛ Uᴘᴅᴀᴛᴇ: {user_data.get('last_update', 'N/A')}
+✅ Lᴀsᴛ Vᴇʀɪꜰɪᴇᴅ: {user_data.get('last_verified', 'N/A')}
+
+📊 Vᴇʀɪꜰɪᴄᴀᴛɪᴏɴ Hɪꜱᴛᴏʀʏ:
+"""
+    
+    for i, record in enumerate(user_data.get('verification_history', [])[-5:]):
+        status = "✅" if record.get('success') else "❌"
+        info_msg += f"{i+1}. {status} {record.get('timestamp')} - {record.get('details')}\n"
+
+    log_audit_event(user_id, "ADMIN_USERINFO", 
+                   f"Viewed info for user: {target_user_id}")
+    
+    await update.message.reply_text(info_msg)
+
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Broadcast message to all users"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Aᴄᴄᴇꜱꜱ Dᴇɴɪᴇᴅ.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("❌ Uꜱᴀɢᴇ: /broadcast <message>")
+        return
+
+    message = " ".join(context.args)
+    users = list(users_collection.find({}))
+    success_count = 0
+    fail_count = 0
+
+    broadcast_msg = f"""
+╏╠══[𝍖𝍖𝍖 ＢＲＯＡＤＣＡＳＴ 𝍖𝍖𝍖]    
+
+{message}
+
+━━━━━━━━━━━━━━━━━━━━━
+✨ Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ
+"""
+    
+    for user in users:
+        try:
+            await context.bot.send_message(chat_id=int(user["_id"]), text=broadcast_msg)
+            success_count += 1
+        except Exception as e:
+            print(f"Failed to send to {user['_id']}: {e}")
+            fail_count += 1
+        await asyncio.sleep(0.1)  # Prevent flooding
+
+    log_audit_event(user_id, "ADMIN_BROADCAST", 
+                   f"Message: {message}, Success: {success_count}, Failed: {fail_count}")
+    
+    await update.message.reply_text(f"✅ Bʀᴏᴀᴅᴄᴀꜱᴛ ᴄᴏᴍᴘʟᴇᴛᴇᴅ!\nSᴜᴄᴄᴇꜱꜱ: {success_count}\nFᴀɪʟᴇᴅ: {fail_count}")
 
 # ==== Handlers ====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
-    pool = context.bot_data["pool"]
     
+    # Log the start command
     log_audit_event(user_id, "START_COMMAND", f"User: {name}")
     
-    user_data = await get_user(pool, user_id)
+    # Check if user is already in database
+    user_data = users_collection.find_one({"_id": str(user_id)})
+    
+    # Always check current membership status
     is_member = await check_membership(update, context, user_id)
     
     if is_member:
+        # User is a member of channels
         if not user_data:
-            user_data = await upsert_user(pool, user_id, name, credits=2, last_verified=datetime.now(), initial_credits_given=True)
-            await add_verification_record(pool, user_id, True, "New user - initial credits granted")
+            # New user - add to database with initial credits
+            user_data = update_user(user_id, credits=2, name=name, 
+                                  last_verified=datetime.now().isoformat())
+            add_verification_record(user_id, True, "New user - initial credits granted")
             
             await update.message.reply_text(
                 "🍑 Vᴇʀɪꜰɪᴄᴀᴛɪᴏɴ Sᴜᴄᴄᴇꜱꜱꜰᴜʟ! 🎉🎊\n\n"
                 "✨ Yᴏᴜ'ᴠᴇ Rᴇᴄᴇɪᴠᴇᴅ  💎 2 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ\n\n"
-                "🚀 Use Bot Enter Number Like +91********** Format"
+                "🚀 Eɴᴊᴏʏ Yᴏᴜʀ Jᴏᴜʀɴᴇʏ Wɪᴛʜ ╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]      "
             )
         else:
-            user_data = await upsert_user(pool, user_id, name=name)
-            await add_verification_record(pool, user_id, True, "Existing user - membership verified")
+            # Existing user - just update name if needed
+            user_data = update_user(user_id, name=name)
+            add_verification_record(user_id, True, "Existing user - membership verified")
         
         await show_profile(update, context, user_id, user_data)
     else:
+        # User hasn't joined both channels, show join buttons
         keyboard = [
             [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
             [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
             [InlineKeyboardButton("🔐 ＶＥＲＩＦＹ", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        if user_data:
-            await add_verification_record(pool, user_id, False, "User not member of required channels")
+        
+        add_verification_record(user_id, False, "User not member of required channels")
         
         await update.message.reply_text(
             "╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]      \n\n"
@@ -358,16 +589,20 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_id = update.effective_user.id
     name = update.effective_user.first_name
-    pool = context.bot_data["pool"]
     
+    # Check if user has joined both channels
     is_member = await check_membership(update, context, user_id)
-    user_data = await get_user(pool, user_id)
+    
+    user_data = users_collection.find_one({"_id": str(user_id)})
     
     if is_member:
         if not user_data:
-            user_data = await upsert_user(pool, user_id, name, credits=2, last_verified=datetime.now(), initial_credits_given=True)
-            await add_verification_record(pool, user_id, True, "New user - initial credits granted via verify")
+            # New user - add to database with initial credits
+            user_data = update_user(user_id, credits=2, name=name, 
+                                  last_verified=datetime.now().isoformat())
+            add_verification_record(user_id, True, "New user - initial credits granted via verify")
             
+            # Show success message and immediately show profile
             await query.edit_message_text(
                 "🍑 Vᴇʀɪꜰɪᴄᴀᴛɪᴏɴ Sᴜᴄᴄᴇꜱꜱꜱꜰᴜʟ! 🎉🎊\n\n"
                 "✨ Yᴏᴜ'ᴠᴇ Rᴇᴄᴇɪᴠᴇᴅ  💎 2 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ\n\n"
@@ -375,8 +610,10 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await show_profile(update, context, user_id, user_data)
         else:
-            user_data = await upsert_user(pool, user_id, name=name, last_verified=datetime.now())
-            await add_verification_record(pool, user_id, True, "Existing user - reverified")
+            # Existing user - update verification status but don't give credits again
+            user_data = update_user(user_id, name=name, 
+                                  last_verified=datetime.now().isoformat())
+            add_verification_record(user_id, True, "Existing user - reverified")
             
             await query.edit_message_text(
                 "✅ Yᴏᴜ Aʀᴇ Aʟʀᴇᴀᴅʏ ᴀ Mᴇᴍʙᴇʀ Aɴᴅ Hᴀᴠᴇ Aʟʀᴇᴀᴅʏ Rᴇᴄᴇɪᴠᴇᴅ Yᴏᴜʀ Iɴɪᴛɪᴀʟ Cʀᴇᴅɪᴛs.\n\n"
@@ -384,8 +621,8 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await show_profile(update, context, user_id, user_data)
     else:
-        if user_data:
-            await add_verification_record(pool, user_id, False, "Verification failed - not member of channels")
+        # User hasn't joined both channels
+        add_verification_record(user_id, False, "Verification failed - not member of channels")
         
         keyboard = [
             [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
@@ -407,63 +644,157 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    # ... (button handler logic same as before, just needs to call show_profile for 'profile' case)
-    if query.data == "profile":
-        user_id = update.effective_user.id
-        await show_profile(update, context, user_id=user_id, edit_message=True)
-    elif query.data == "help":
-        # ... help text
+    if query.data == "help":
+        help_text = """╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]    
+
+🔍 *Hᴏᴡ Tᴏ Uꜱᴇ Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ:*
+
+✯ 📱 *Pʜᴏɴᴇ Nᴜᴍʙᴇ Sᴇᴀʀᴄʜ* – Sᴇɴᴅ Nᴏ. Lɪᴋᴇ  `91XXXXXXXXXX`
+✯ 📧 *Eᴍᴀɪʟ Sᴇᴀʀᴄʜ* – Sᴇɴᴅ Eᴍᴀɪʙ Lɪᴋᴇ  `example@gmail.com`
+✯ 👤 *Nᴀᴍᴇ Sᴇᴀʀᴄʜ* – Jᴜꜱᴛ Sᴇɴᴅ Tʜᴇ Nᴀᴍᴇ
+↣↣↣↣↣↣↣↣↣↣
+📂 I Wɪʟʟ Sᴄᴀɴ Aᴄʀᴏꜱꜱ Mᴜʟᴛɪᴘʟᴇ Dᴀᴛᴀʙᴀꜱᴇꜱ 🗂️
+━━━━━━━━━━━━━━━━━━━━━
+☛ *Nᴏᴛᴇ:* Eᴀᴄʜ Sᴇᴀʀᴄʜ Cᴏꜱᴛꜱ 💎 1 Cʀᴇᴅɪᴛ
+"""
         keyboard = [[InlineKeyboardButton("🔙 Bᴀᴄᴋ", callback_data="profile")]]
-        await query.edit_message_text("Help text here...", reply_markup=InlineKeyboardMarkup(keyboard))
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(help_text, parse_mode="Markdown", reply_markup=reply_markup)
+        
     elif query.data == "search_prompt":
-        # ... search prompt text
+        search_prompt_text = """╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]    
+
+🔍 *Wʜᴀᴛ Cᴀɴ ɪ Dᴏ?*
+
+☛ 📱 *Pʜᴏɴᴇ Nᴜᴍʙᴇ Sᴇᴀʀᴄʜ* – Sᴇɴᴇ Nᴏ. Lɪᴋᴇ  `91XXXXXXXXXX`
+↣↣↣↣↣↣↣↣↣↣
+☛ 📧 *Eᴍᴀɪʟ Sᴇᴀʀᴄʜ* – Sᴇɴᴅ Eᴍᴀɪʟ Lɪᴋᴇ  `example@gmail.com`
+↣↣↣↣↣↣↣↣↣↣
+☛ 👤 *Nᴀᴍᴇ Sᴇᴀʀᴄʜ* – Jᴜꜱᴛ Sᴇɴᴅ Tʜᴇ Nᴀᴍᴇ
+↣↣↣↣↣↣↣↣↣↣
+📂 I Wɪʟʟ Sᴄᴀɴ Aᴄʀᴏꜱꜱ Mᴜʟᴛɪᴘʟᴇ Dᴀᴛᴀʙᴀꜱᴇꜱ 🗂️
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ *Nᴏᴛᴇ:* Eᴀᴄʜ Sᴇᴀʀᴄʜ Cᴏꜱᴛꜱ 💎 1 Cʀᴇᴅɪᴛ
+"""
         keyboard = [[InlineKeyboardButton("🔙 Bᴀᴄᴋ", callback_data="profile")]]
-        await query.edit_message_text("Search prompt text here...", reply_markup=InlineKeyboardMarkup(keyboard))
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(search_prompt_text, parse_mode="Markdown", reply_markup=reply_markup)
+        
     elif query.data == "buy":
-        # ... buy message text
+        buy_message = """
+╏╠══[𝍖𝍖𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖𝍖𝍖]      
+
+💎 Cʀᴇᴅɪᴛ Pʟᴀɴꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Sᴛᴀʀᴛᴇʀ Pᴀᴄᴋ 🎯 
+✨10 Cʀᴇᴅɪᴛꜱ → ₹25 
+🎁Bᴏɴᴜꜱ: +2 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Bᴇꜱᴛ ꜰᴏʀ ᴛᴇꜱᴛɪɴɢ ᴛʜᴇ ᴀᴘᴐ
+━━━━━━━━━━━━━━━━━━━━━
+
+2️⃣ Vᴀʟᴜᴇ Pᴀᴄᴋ 📦 
+✨25 Cʀᴇᴅɪᴛꜱ → ₹50 
+🎁Bᴏɴᴜꜱ: +5 Fʀᴇᴅɪᴛꜱ 
+💡Pᴏᴘᴜʟᴀʜ ᴄʜᴏɪᴄᴇ ꜰᴏʀ ɴᴇᴡ ᴜꜱᴇʀꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+3️⃣ Sᴍᴀʀᴛ Sᴀᴠᴇʀ Pᴀᴄᴋ 🪙 
+✨50 Cʀᴇᴅɪᴛꜱ → ₹90 
+🎁Bᴏɴᴜꜱ: +15 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Mᴏʜᴇ ᴘʜᴀᴛɪᴍᴇ, ᴍᴏʀᴇ ʀᴇᴡᴀʀᴅꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+4️⃣ Pʀᴏ Pᴀᴄᴋ 🚀 
+✨75 Cʀᴇᴅɪᴛꜱ → ₹120 
+🎁Bᴏɴᴜꜱ: +25 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Bᴇꜱᴛ ꜰᴏʀ ʀᴇɢᴜʟᴀʀ ᴜꜱᴇʀꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+5️⃣ Mᴇɢᴀ Pᴀᴄᴋ 👑 
+✨100 Cʀᴇᴅɪᴛꜱ → ₹150 
+🎁Bᴏɴᴜꜱ: +40 Fʀᴇᴇ Cʀᴇᴅɪᴛꜱ 
+💡Mᴀxɪᴍᴜᴍ ᴠᴀʟᴜᴇ & ꜱᴀᴠɪɴɢꜱ
+━━━━━━━━━━━━━━━━━━━━━
+
+🔌 Aᴘɪ Pᴜʀᴄʜᴀꜱᴇ
+━━━━━━━━━━━━━━━━━━━━━
+
+🕒 Bᴜʏ Aᴘɪ — 1 Mᴏɴᴛʜ — ₹399/-
+🔒Bᴜʏ Aᴘɪ — Lɪꜰᴇᴛɪᴍᴇ — ₹1999/-
+ℹ️Cᴏɴᴛᴀᴄᴛ Oᴡɴᴇʀ ꜰᴏʀ ᴍᴏʀᴇ ɪɴꜰᴏʀᴍᴀᴛɪᴜɴ: @pvt_s1n
+"""
+
         keyboard = [
             [InlineKeyboardButton("💬 Cᴏɴᴛᴀᴄᴛ Oᴡɴᴇʀ", url=f"https://t.me/{OWNER_USERNAME[1:]}")],
             [InlineKeyboardButton("🔙 Bᴀᴄᴋ", callback_data="profile")]
         ]
-        await query.edit_message_text("Buy credits text here...", reply_markup=InlineKeyboardMarkup(keyboard))
-
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(buy_message, reply_markup=reply_markup)
+        
+    elif query.data == "profile":
+        user_id = update.effective_user.id
+        user_data = users_collection.find_one({"_id": str(user_id)})
+        if not user_data:
+            user_data = {"credits": 0, "last_update": "N/A", "name": "Unknown"}
+        await show_profile(update, context, user_id, user_data, edit_message=True)
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    pool = context.bot_data["pool"]
 
+    # Check membership first
     is_member = await check_membership(update, context, user_id)
     if not is_member:
-        # ... (membership check logic same as before)
+        keyboard = [
+            [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🔐 ＶＥＲＩＦＹ", callback_data="verify")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("⚠️ Yᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴀʟʟ ᴄʜᴀɴɴᴇʟꜱ ᴀɴᴅ ᴠᴇʀɪғʏ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ.", reply_markup=reply_markup)
         return
 
-    user_data = await get_user(pool, user_id)
+    user_data = users_collection.find_one({"_id": str(user_id)})
+    
     if not user_data:
+        # New user - add to database with initial credits
         name = update.effective_user.first_name
-        user_data = await upsert_user(pool, user_id, name, credits=2, last_verified=datetime.now(), initial_credits_given=True)
-        await add_verification_record(pool, user_id, True, "New user - initial credits granted via search")
+        user_data = update_user(user_id, credits=2, name=name, last_verified=datetime.now().isoformat())
+        add_verification_record(user_id, True, "New user - initial credits granted via search")
 
-    if user_data["credits"] <= 0:
+    if user_data.get("credits", 0) <= 0:
         keyboard = [[InlineKeyboardButton("💳 Bᴜʏ Cʀᴇᴅɪᴛꜱ", callback_data="buy")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(f"❌ Nᴏ Cʀᴇᴅɪᴛ Lᴇꜰᴛ!\n\n💳Bᴜʏ Uɴʟɪᴍɪᴛᴇᴅ 🌀 Cʀᴇᴅɪᴛꜱ & Aᴘɪ⚡Cᴏɴᴛᴀᴄᴛ 👉 {OWNER_USERNAME}", reply_markup=reply_markup)
         return
 
+    # Show animated spinner
     spinner_msg = await show_spinner(update, context, update.message)
-    query_text = update.message.text
-    result = query_leakosint(query_text)
+
+    query = update.message.text
+    result = query_leakosint(query)
     msg = format_results(result)
 
+    # Deduct 1 credit only if search was successful
     if "Nᴏ Dᴀᴛᴀ" not in msg and "Sᴇʀᴠᴇʀ" not in msg:
-        new_credits = user_data["credits"] - 1
-        user_data = await upsert_user(pool, user_id, user_data['name'], credits=new_credits)
-        log_audit_event(user_id, "SEARCH", f"Query: {query_text}, Success: True, Credits left: {new_credits}")
+        new_credits = user_data.get("credits", 0) - 1
+        users_collection.update_one(
+            {"_id": str(user_id)},
+            {"$set": {"credits": new_credits, "last_update": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")}}
+        )
+        
+        # Log the search
+        log_audit_event(user_id, "SEARCH", f"Query: {query}, Success: True, Credits left: {new_credits}")
     else:
-        log_audit_event(user_id, "SEARCH", f"Query: {query_text}, Success: False, Credits left: {user_data['credits']}")
+        # Log failed search
+        log_audit_event(user_id, "SEARCH", f"Query: {query}, Success: False, Credits left: {user_data.get('credits', 0)}")
 
+    # Delete spinner message
     await spinner_msg.delete()
-    
-    credits_left = user_data["credits"]
+
+    # Add credits info and deposit button
+    user_data = users_collection.find_one({"_id": str(user_id)})
+    credits_left = user_data.get("credits", 0) if user_data else 0
     msg += f"\n💵 Cʀᴇᴅɪᴛ : {credits_left} 💎"
     
     keyboard = [[InlineKeyboardButton("💳 Bᴜʏ Cʀᴇᴅɪᴛꜱ", callback_data="buy")]]
@@ -473,60 +804,79 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    pool = context.bot_data["pool"]
     
+    # Check membership first
     is_member = await check_membership(update, context, user_id)
     if not is_member:
-        # ... (membership check logic same as before)
+        keyboard = [
+            [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🔐 ＶＥＲＩＦＹ", callback_data="verify")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("⚠️ Yᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴀʟʟ ᴄʜᴀɴɴᴇʟꜱ ᴀɴᴅ ᴠᴇʀɪғʏ ᴛᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ.", reply_markup=reply_markup)
         return
         
-    user_data = await get_user(pool, user_id)
+    user_data = users_collection.find_one({"_id": str(user_id)})
     c = user_data.get("credits", 0) if user_data else 0
     await update.message.reply_text(f"💵 Yᴏᴜʀ Cʀᴇᴅɪᴛꜱ: {c} 💎")
 
 async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    
+    # Check membership first
     is_member = await check_membership(update, context, user_id)
     if not is_member:
-        # ... (membership check logic same as before)
+        keyboard = [
+            [InlineKeyboardButton("📢 ＪＯ𝐼𝐍", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("📢 ＪＯ𝐼𝐍", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🔐 ＶＥ１𝐼ＦＹ", callback_data="verify")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("⚠️ Yᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴀʟʟ ᴄʜᴀɴɴᴇʟꜱ ᴀɴᴅ ᴠᴇʀɪғʏ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ.", reply_markup=reply_markup)
         return
         
-    await show_profile(update, context, user_id)
+    user_data = users_collection.find_one({"_id": str(user_id)})
+    if not user_data:
+        user_data = {"credits": 0, "last_update": "N/A", "name": "Unknown"}
+    await show_profile(update, context, user_id, user_data)
 
+# ==== ADMIN COMMANDS ====
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    pool = context.bot_data["pool"]
     
-    if user_id != 7975903577: # Aapki admin user ID
+    # Simple admin check - you might want to implement a more robust system
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Aᴄᴄᴇꜱꜱ Dᴇɴɪᴇᴅ.")
         return
         
-    stats = await get_admin_stats(pool)
+    users_count = users_collection.count_documents({})
+    total_credits = 0
+    for user in users_collection.find({}):
+        total_credits += user.get("credits", 0)
+    
     stats_msg = f"""
 ╏╠══[𝍖𝍖𝍖 ＡＤＭＩＮ  𝍖𝍖𝍖]    
 
-👥 Tᴏᴛᴀʟ Usᴇʀs: {stats['total_users']}
-💎 Tᴏᴛᴀʟ Cʀᴇᴅɪᴛs: {stats['total_credits'] or 0}
+👥 Tᴏᴛᴀʟ Usᴇʀs: {users_count}
+💎 Tᴏᴛᴀʟ Cʀᴇᴅɪᴛs: {total_credits}
 📊 Lᴀsᴛ Uᴘᴅᴀᴛᴇ: {datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')}
 """
     await update.message.reply_text(stats_msg)
 
 # ==== MAIN ====
 def main():
-    if not BOT_TOKEN:
-        print("FATAL: BOT_TOKEN environment variable not set.")
-        return
-    if not DATABASE_URL:
-        print("FATAL: DATABASE_URL environment variable not set.")
-        return
-
-    app = Application.builder().token(BOT_TOKEN).post_init(init_db).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("credits", credits))
     app.add_handler(CommandHandler("me", me))
     app.add_handler(CommandHandler("buy", buy_command))
     app.add_handler(CommandHandler("adminstats", admin_stats))
+    app.add_handler(CommandHandler("addcredits", addcredits_command))
+    app.add_handler(CommandHandler("setcredits", setcredits_command))
+    app.add_handler(CommandHandler("userinfo", userinfo_command))
+    app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
     app.add_handler(CallbackQueryHandler(button_handler, pattern="^(help|search_prompt|buy|profile)$"))
