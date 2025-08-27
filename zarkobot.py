@@ -70,7 +70,6 @@ def membership_required(func):
 # ==== Security Functions ====
 def generate_user_hash(user_id: int) -> str:
     """Generate a consistent 6-digit alphanumeric hash for user identification."""
-    # Using hashlib for a more standard hashing approach
     sha = hashlib.sha256(str(user_id).encode()).hexdigest()
     return sha[:6].upper()
 
@@ -137,7 +136,6 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, u
     except Exception as e:
         print(f"Error checking membership for user {user_id}: {e}")
         log_audit_event(user_id, "MEMBERSHIP_ERROR", str(e))
-        # Default to false but alert the user that something is wrong.
         if update.message:
             await update.message.reply_text("Couldn't verify channel membership due to a Telegram error. Please try again later.")
         return False
@@ -148,7 +146,7 @@ async def query_leakosint(query: str) -> dict:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(API_URL, json=payload, timeout=30.0)
-            resp.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+            resp.raise_for_status()
             return resp.json()
     except httpx.RequestError as e:
         print(f"API request error: {e}")
@@ -165,7 +163,6 @@ def format_results(resp: dict) -> str:
     results = []
     for db, data in resp.get("List", {}).items():
         for row in data.get("Data", []):
-            # Use .get() with a default value for safer access
             result_entry = f"""
 👤 Nᴀᴍᴇ ➤ {row.get("FatherName", "N/A")}
 🧓 Fᴀᴛʜᴇʀ'ꜱ Nᴀᴍᴇ ➤ {row.get("FullName", "N/A")}
@@ -251,7 +248,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
              add_verification_record(user.id, True, "Existing user - membership re-verified")
         
-        await show_profile(update, context, edit_message=False)
+        await show_profile(update, context) # No edit_message needed
     else:
         keyboard = [
             [InlineKeyboardButton("📢 ＪＯＩＮ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
@@ -284,7 +281,6 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text
     spinner_msg = await update.message.reply_text("🔍 Sᴇᴀʀᴄʜɪɴɢ...")
 
-    # Concurrently run the API call and the spinner animation
     api_task = asyncio.create_task(query_leakosint(query))
     spinner_frames = ["▖", "▘", "▝", "▗"]
     i = 0
@@ -294,12 +290,11 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
             i += 1
             await asyncio.sleep(0.2)
         except Exception:
-            break  # Stop spinner if message is deleted or inaccessible
+            break
 
     result_json = await api_task
     msg_text = format_results(result_json)
 
-    # Deduct credit only on a successful search that finds data
     if "Nᴏ Dᴀᴛᴀ" not in msg_text and "Sᴇʀᴠᴇʀ" not in msg_text:
         new_credits = user_data.get("credits", 1) - 1
         update_user(user_id, {"credits": new_credits})
@@ -309,14 +304,17 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await spinner_msg.delete()
 
-    # Refresh user data to show updated credit count
     updated_user_data = get_or_create_user(user_id)
     credits_left = updated_user_data.get("credits", 0)
     final_message = f"{msg_text}\n\n💵 Cʀᴇᴅɪᴛꜱ Lᴇꜰᴛ: {credits_left} 💎"
     
     await update.message.reply_text(final_message, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💳 Bᴜʏ Cʀᴇᴅɪᴛꜱ", callback_data="buy")]]))
 
+# ===================================================================
+# ==== THIS IS THE CORRECTED FUNCTION ====
+# ===================================================================
 async def show_profile(update: Update, context: ContextTypes.DEFAULT_TYPE, edit_message: bool = False):
+    """Displays the user profile. Can either edit an existing message or send a new one."""
     user_id = update.effective_user.id
     user_data = get_or_create_user(user_id, update.effective_user.first_name)
     
@@ -334,11 +332,20 @@ async def show_profile(update: Update, context: ContextTypes.DEFAULT_TYPE, edit_
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    target_message = update.callback_query.message if edit_message else update.message
-    if edit_message:
-        await target_message.edit_text(profile_msg, reply_markup=reply_markup, parse_mode="Markdown")
+    # This logic now correctly handles all cases
+    if edit_message and update.callback_query:
+        # If called from a button and we need to edit the message
+        await update.callback_query.message.edit_text(
+            profile_msg, reply_markup=reply_markup, parse_mode="Markdown"
+        )
     else:
-        await target_message.reply_text(profile_msg, reply_markup=reply_markup, parse_mode="Markdown")
+        # If called from a command OR after verification, send a new message
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=profile_msg,
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
 
 @membership_required
 async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -374,6 +381,7 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             add_verification_record(user.id, True, "Existing user - reverified successfully")
             await query.edit_message_text("✅ Vᴇʀɪꜰɪᴄᴀᴛɪᴏɴ Sᴜᴄᴄᴇꜱꜱꜰᴜʟ! Yᴏᴜ ᴀʀᴇ ᴀʟʀᴇᴀᴅʏ ᴀ ᴠᴇʀɪꜰɪᴇᴅ ᴍᴇᴍʙᴇʀ.")
         
+        # This will now correctly send a new message with the profile info
         await show_profile(update, context, edit_message=False)
     else:
         add_verification_record(user.id, False, "Verification failed - not in channels")
@@ -533,7 +541,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 print(f"Failed to send broadcast to {user['_id']}: {e}")
                 fail_count += 1
-            await asyncio.sleep(0.1)  # To avoid hitting rate limits
+            await asyncio.sleep(0.1)
             if (i + 1) % 20 == 0:
                 await status_msg.edit_text(f"📢 Broadcasting... Sent: {i+1}/{len(all_users)}")
 
