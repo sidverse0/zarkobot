@@ -71,28 +71,32 @@ GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
 
 # Constants for messages (normalized text)
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
+﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
+☞📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
 
-📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
-📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
-👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
+☞📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
 
-⚠️ 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs
-────────────────────
-Note: 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 
-𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ 👉 @Pvt_s1n
+☞👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
+
+🌏 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
+-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
+
+➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎
+➛ 𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
 """
 
-SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖👁️‍🗨️ 𝐒ᴇᴀʀᴄʜ 👁️‍🗨️ 𝍖𝍖𝍖]
- ━━━━━━━━━━━━━━━━━━━━      
+SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
+  ﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
+✮📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
 
-📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
-📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
-👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
+✮📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
 
-⚠️ 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs
-────────────────────
-Note: 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 
-𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴜᴛ 𝐎ᴡɴᴇʀ 👉 @Pvt_s1n
+✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
+
+🌏 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
+﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
+➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎 
+➛ 𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
 """
 
 # ==== Firebase Data Functions ====
@@ -115,7 +119,7 @@ def save_users(users):
         return
     try:
         for user_id, user_data in users.items():
-            db.collection('users').document(user_id).set(user_data)
+            db.collection('users').document(str(user_id)).set(user_data)
     except Exception as e:
         print(f"Error saving users to Firebase: {e}")
 
@@ -207,17 +211,17 @@ def log_audit_event(user_id, event_type, details):
 # ==== Reply Keyboard Setup ====
 def get_main_keyboard():
     keyboard = [
-        ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ"],
-        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "🥂 𝐑ᴇғᴇʀ"],
+        ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ"],
+        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
         ["☎️ 𝐇ᴇʟᴘ", "🧧 𝐀ᴅᴍɪɴ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Choose Options")
 
 def get_admin_keyboard():
     keyboard = [
-        ["➕ Add Credits", "🔢 Set Credits", "👤 User Info"],
-        ["📢 Broadcast", "🎁 Generate Gift", "📋 Referral Stats"],
-        ["📊 Stats", "🔙 Main Menu"]
+        ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ"],
+        ["📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ"],
+        ["📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Admin Panel")
 
@@ -411,9 +415,9 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
     
     if not is_member:
         keyboard = [
-            [InlineKeyboardButton("📢 Join Channel 1", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("📢 Join Channel 2", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("✅ Verify Membership", callback_data="verify")]
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🟢 𝐕ᴇʀɪғʏ", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -422,26 +426,26 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
             try:
                 await update.callback_query.message.reply_photo(
                     photo=VERIFY_IMAGE_URL,
-                    caption="🔒 You Must Join Both Channels And Verify To Use This Bot",
+                    caption="🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
                     reply_markup=reply_markup
                 )
             except Exception as e:
                 print(f"Error sending verification message: {e}")
                 await update.callback_query.message.reply_text(
-                    "🔒 You Must Join Both Channels And Verify To Use This Bot",
+                    "🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
                     reply_markup=reply_markup
                 )
         else:
             try:
                 await update.message.reply_photo(
                     photo=VERIFY_IMAGE_URL,
-                    caption="🔒 You Must Join Both Channels And Verify To Use This Bot",
+                    caption="🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
                     reply_markup=reply_markup
                 )
             except Exception as e:
                 print(f"Error sending verification message: {e}")
                 await update.message.reply_text(
-                    "🔒 You Must Join Both Channels And Verify To Use This Bot",
+                    "🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
                     reply_markup=reply_markup
                 )
         return False
@@ -534,7 +538,7 @@ def query_leakosint(query: str):
 def format_results(resp, max_length=4000):
     if "Error" in resp or "Error code" in resp:
         err = resp.get("Error") or resp.get("Error code")
-        return ["⚠️ Server Is Under Construction"]
+        return ["🚧⛔ 𝐒ᴇʀᴠᴇʀ 𝐈s 𝐆ᴇᴛᴛɪɴɢ 𝐀ɴ 𝐔ᴘɢʀᴀᴅᴇ » 𝐈ғ 𝐀ɴʏ 𝐂ʀᴇᴅɪᴛ 𝐀ʀᴇ 𝐃ᴇᴅᴜᴄᴛᴇᴅ 𝐅ʀᴏᴍ 𝐘ᴏᴜʀ 𝐀ᴄᴄᴏᴜɴᴛ 𝐊ɪɴᴅʟʏ 𝐖ᴀɪᴛ 𝐅ᴏʀ 𝐑ᴇғᴜɴᴅ ⛔🚧"]
 
     results = []
     current_result = ""
@@ -575,19 +579,19 @@ def format_results(resp, max_length=4000):
                 continue
 
             result_entry = f"""
-👤 Name ➜ {name}
-👨 Father's Name ➜ {father}
-📞 Mobile ➜ {mobile}
-📱 Alt Number1 ➜ {alt1}
-📱 Alt Number2 ➜ {alt2}
-📱 Alt Number3 ➜ {alt3}
-📱 Alt Number4 ➜ {alt4}
-📱 Alt Number5 ➜ {alt5}
-📧 Email ➜ {email}
-🆔 Aadhar ID ➜ {doc}
-📍 City ➜ {region}
-🏠 Address ➜ {address}
-────────────────────
+👤 𝐍ᴀᴍᴇ ➤ {name}
+👨 𝐅ᴀᴛʜᴇʀ's 𝐍ᴀᴍᴇ ➤ {father}
+📞 𝐌ᴏʙɪʟᴇ ➤ {mobile}
+📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ1 ➤ {alt1}
+📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ2 ➤ {alt2}
+📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ3 ➤ {alt3}
+📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ4 ➤ {alt4}
+📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ5 ➤ {alt5}
+📧 𝐄ᴍᴀɪʟ ➤ {email}
+🪪 𝐀ᴀᴅʜᴀʀ 𝐈𝐃 ➤ {doc}
+🧭 𝐂ɪʀᴄʟᴇ ➤ {region}
+🏠 𝐀ᴅᴅʀᴇss ➤ {address}
+──── ୨୧ ──────── ୨୧ ────
 """
             
             # If adding this entry would exceed the max length, start a new message
@@ -601,7 +605,7 @@ def format_results(resp, max_length=4000):
             results_count += 1
 
     if results_count == 0:
-        return ["❌ No Data Available In Database 👉"]
+        return ["🚫 𝐃ᴀᴛᴀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ 𝐈ɴ 𝐃ᴀᴛᴀʙᴀsᴇ » 𝐓ʀʏ 𝐀ɴᴏᴛʜᴇʀ 🚫"]
     
     # Add the last result if it exists
     if current_result:
@@ -636,18 +640,18 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 
     # Create profile message
     profile_msg = f"""
-👤 Name ➜ {name} 
-────────────────────
-🆔 User ID ➜ {user_id}
-────────────────────
-🔐 User Code ➜ {user_hash}
-────────────────────
-🪙 Credit ➜ {credits} 🪙
-────────────────────
-📅 Joined ➜ {join_date_display}
-────────────────────
-🔄 Updated ➜ {last_update}
-────────────────────
+🃏 𝐍ᴀᴍᴇ ➤ {name} 
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
+🀄 𝐔sᴇʀ 𝐈𝐃 ➤ {user_id}
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
+ 🎴𝐔sᴇʀ 𝐂ᴏᴅᴇ ➤ {user_hash}
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
+💎 𝐂ʀᴇᴅɪᴛ ➤ {credits} 💎
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
+📅 𝐉ᴏɪɴᴇᴅ ➤ {join_date_display}
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
+🔖 𝐔ᴘᴅᴀᴛᴇᴅ ➤ {last_update}
+──── ୨୧ ──────── ୨୧ ────
 """
 
     if edit_message and hasattr(update, 'callback_query'):
@@ -677,7 +681,7 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
     uid = str(user_id)
     
     if uid not in users:
-        await update.message.reply_text("❌ User not found. Please use /start first.")
+        await update.message.reply_text("❌ 𝐔sᴇʀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ » 𝐏ʟᴇᴀsᴇ 𝐔sᴇ /start 𝐅ɪʀsᴛ 🛑")
         return
         
     user_data = users[uid]
@@ -690,28 +694,20 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
     referral_link = f"https://t.me/{bot_username}?start={referral_code}"
     
     referral_msg = f"""
-🤝 [ REFER & EARN ] 🤝
-────────────────────
+───୨[𝍖💶 𝐑ᴇғᴇʀ 𝐀ɴᴅ 𝐄ᴀʀɴ 💶𝍖]ৎ───
+꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ 
 
-🔗 Your Referral Link:
+💎 𝐘ᴏᴜʀ 𝐑ᴇғᴇʀ 𝐋ɪɴᴋ ➤
 {referral_link}
 
-📊 Your Referral Stats:
-👥 Total Referrals ➜ {referrals}
-🎁 Total Credits Earned ➜ {referral_credits} 🪙
+🎯 𝐘ᴏᴜʀ 𝐑ᴇғᴇʀ 𝐃ᴇᴛᴀɪʟ »
+👥 𝐓ᴏᴛᴀʟ 𝐑ᴇғᴇʀᴀʟs ➤ {referrals}
+💶 𝐓ᴏᴛᴀʟ 𝐂ʀᴇᴅɪᴛ 𝐄ᴀʀɴ ➤ {referral_credits} 💎
 
-💰 Referral Rewards:
-- For each successful referral, you get 2 🪙 credits
-- Your friend gets 2 🪙 bonus credits too!
-
-⚡ How It Works:
-1. Share your referral link with friends
-2. When they join using your link
-3. Both of you get 2 🪙 credits each
-4. Credits are added after they verify
-
-────────────────────
-Note: Fake referrals or self-referrals are strictly prohibited and will result in account ban.
+🏅 𝐑ᴇғᴇʀ 𝐑ᴇᴡᴀʀᴅs »
+» 𝐅ᴏʀ 𝐄ᴀᴄʜ 𝐒ᴜᴄᴄᴇss 𝐑ᴇғᴇʀ 𝐘ᴏᴜ 𝐆ᴇᴛ 2 💎 𝐂ʀᴇᴅɪᴛs
+» 𝐘ᴏᴜʀ 𝐅ʀɪᴇɴᴅs 𝐆ᴇᴛ 2 💎 𝐁ᴏɴᴜs 𝐂ʀᴇᴅɪᴛs 𝐓ᴏᴏ!
+-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
 """
 
     # Send as photo with caption
@@ -765,8 +761,8 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💰 Different Payment Methods 💰
 ────────────────────
 
-📲 UPI Payment - 1 Month - ₹399💰
-💳 UPI Payment - Lifetime - ₹1999💰
+📲 𝐁ᴜʏ 𝐀𝐏𝐈 - 1 𝐌𝐎𝐍𝐓𝐇 - ₹399💰
+💳 𝐁ᴜʏ 𝐀𝐏𝐈 - 𝐋𝐈𝐅𝐄𝐓𝐈𝐌𝐄 - ₹1999💰
 📞 Contact Owner For More Prices : @pvt_s1n
 """
 
@@ -785,13 +781,17 @@ async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await force_membership_check(update, context):
         return
     
+    # Clear any existing states
+    context.user_data.pop('in_search_mode', None)
+    context.user_data.pop('admin_action', None)
+    
     # Set state to wait for gift code
     context.user_data['waiting_for_gift_code'] = True
     
     # Send prompt message
     await update.message.reply_photo(
         photo=GIFT_IMAGE_URL,
-        caption="🎁 [ GIFT CODE ] 🎁\n\nPlease enter your gift code:"
+        caption="────୨[𝍖𝍖𝍖🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 🎁𝍖𝍖𝍖]ৎ────\n\nׂ╰┈➤ 𝐏ʟᴇᴀsᴇ 𝐄ɴᴛᴇʀ 𝐘ᴏᴜʀ 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 𝐁ᴇʟᴏᴡ👇"
     )
 
 async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -811,12 +811,12 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = str(user_id)
     
     if uid not in users:
-        await update.message.reply_text("❌ User not found. Please use /start first.")
+        await update.message.reply_text("❌ 𝐔sᴇʀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ » 𝐏ʟᴇᴀsᴇ 𝐔sᴇ /start 𝐅ɪʀsᴛ 🛑")
         return
     
     # Check if user has already claimed this code
     if gift_code in users[uid].get("claimed_gift_codes", []):
-        await update.message.reply_text("❌ You have already claimed this gift code.")
+        await update.message.reply_text("🚫 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐀ʟʀᴇᴀᴅʏ 𝐂ʟᴀɪᴍᴇᴅ 𝐓ʜɪs 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 🥂")
         return
     
     # Try to claim the gift code
@@ -839,12 +839,13 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         gift_name = gift_codes[gift_code].get("name", "Unknown Gift")
         
         broadcast_msg = f"""
-🎉 [ GIFT CODE CLAIMED ] 🎉
-
-🎁 Gift: {gift_name}
-💰 Amount: {result} 🪙
-👤 Claimed by: {users[uid]['name']} (ID: {user_id})
-⏰ Claimed at: {datetime.now().strftime('%d/%m - %I:%M %p')}
+────୨[𝍖🎁 𝐂ᴏᴅᴇ 𝐂ʟᴀɪᴍᴇᴅ 🎁𝍖]ৎ────
+⊹ ࣪ ﹏𓊝﹏𓂁﹏⊹ ࣪ ˖⊹ ࣪ ﹏𓊝﹏𓂁﹏⊹ ࣪ ˖
+🎲 𝐆ɪғᴛ ➤ {gift_name}
+💶 𝐀ᴍᴏᴜɴᴛ ➤ {result} 💎
+🃏 𝐂ʟᴀɪᴍᴇᴅ 𝐁ʏ ➤ {users[uid]['name']}
+🎖️ 𝐈𝐃 ➤ {user_id})
+⏰ 𝐓ɪᴍᴇ ➤ {datetime.now().strftime('%d/%m - %I:%M %p')}
 """
         
         # Broadcast to all users
@@ -852,9 +853,9 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Send success message to user
         await update.message.reply_text(
-            f"✅ Gift code claimed successfully!\n\n"
-            f"🎁 You received: {result} 🪙\n"
-            f"💰 New balance: {users[uid]['credits']} 🪙"
+            f"🏅 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 𝐂ʟᴀɪᴍᴇᴅ 𝐒ᴜᴄᴄᴇssFᴜʟʟʏ!\n\n"
+            f"🎁 𝐘ᴏᴜ 𝐑ᴇᴄᴇɪᴠᴇᴅ ➤ {result} 💎\n"
+            f"💶 𝐍ᴇᴡ 𝐁ᴀʟᴀɴᴄᴇ ➤ {users[uid]['credits']} 💎"
         )
         
         # Log the claim
@@ -876,7 +877,7 @@ async def broadcast_to_all_users(context, message):
 # ==== Fast Animated Spinner ====
 async def show_spinner(update, context, message):
     spinner_frames = [
-        "🔍 Searching.........",
+        "✈︎ᯓ ✈︎ 𝐒ᴇᴀʀᴄʜɪɴɢ ✈︎ᯓ ✈︎",
         "⏳ Analysing Data....."
     ]
     
@@ -900,13 +901,14 @@ async def notify_user_credits(context, user_id, action, amount, new_balance):
     """Notify user when admin modifies their credits"""
     try:
         message = f"""
-💳 [ CREDIT UPDATE ] 💳 
+───୨[𝍖💶 𝐂ʀᴇᴅɪᴛ 𝐔ᴘᴅᴀᴛᴇ 💶𝍖]ৎ───
+﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
+🧧 𝐎ᴡɴᴇʀ 𝐇ᴀs {action} {amount} 💎 𝐓ᴏ 𝐘ᴏᴜʀ 𝐀ᴄᴄᴏᴜɴᴛ
 
-👑 Owner Has {action} {amount} 🪙 To Your Account.
+💶 𝐍ᴇᴡ 𝐁ᴀʟᴀɴᴄᴇ ➤ {new_balance} 💎
 
-New Balance ➜ {new_balance} 🪙
-
-Thank You For Using Our Service 🙏
+🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
+──── ୨୧ ──────── ୨୧ ─────────
 """
         await context.bot.send_message(chat_id=user_id, text=message)
     except Exception as e:
@@ -1052,12 +1054,12 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fail_count = 0
 
     broadcast_msg = f"""
-📢 [ IMPORTANT NOTICE ] 📢 
+───୨[𝍖🔖 𝐀ɴɴᴏᴜɴᴄᴇ𝐌ᴇɴᴛ 🔖𝍖]ৎ───
 
 {message}
 
-────────────────────
- Thank You For Using Our Service 🙏
+──── ୨୧ ──────── ୨୧ ──────── 
+ 🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
 """
     
     for uid in users:
@@ -1095,19 +1097,18 @@ async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TY
         
         # Broadcast the new gift code
         broadcast_msg = f"""
-🎉 [ NEW GIFT CODE ] 🎉
+───୨[𝍖🎁 𝐍ᴇᴡ 𝐆ɪғᴛ 🎁𝍖]ৎ───
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ────
+🎲 𝐆ɪғᴛ ➤  {name}
+💶 𝐀ᴍᴏᴜɴᴛ ➤ {amount} 💎
+🔑 𝐂ᴏᴅᴇ ➤ {code}
+⏰ 𝐕ᴀʟɪᴅ 𝐔ɴᴛɪʟ 𝐂ʟᴀɪᴍ
 
-🎁 Gift: {name}
-💰 Amount: {amount} 🪙
-🔑 Code: {code}
-⏰ Valid until claimed
-
-📝 How to claim:
-1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ button
-2. Enter the code: {code}
-3. Get {amount} 🪙 credits instantly!
-
-Hurry up! First come first served.
+╰┈➤ 📝 𝐇ᴏᴡ 𝐓ᴏ 𝐂ʟᴀɪᴍ »
+⊹ 𝐂ʟɪᴄᴋ 𝐎ɴ 🎁 𝐆ɪғᴛ 
+⊹ 𝐄ɴᴛᴇʀ 𝐓ʜᴇ » {code}
+⊹ 𝐆ᴇᴛ {amount} 💎 𝐂ʀᴇᴅɪᴛs 𝐈ɴsᴛᴀɴᴛ ⚡
+-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
 """
         
         # Broadcast to all users
@@ -1247,33 +1248,33 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         
     text = update.message.text
     
-    if text == "➕ Add Credits":
+    if text == "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs":
         context.user_data['admin_action'] = 'add_credits'
         await update.message.reply_text("👤 Send User ID and Amount (space separated)\nExample: 123456789 10")
         
-    elif text == "🔢 Set Credits":
+    elif text == "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs":
         context.user_data['admin_action'] = 'set_credits'
         await update.message.reply_text("👤 Send User ID and Amount (space separated)\nExample: 123456789 5")
         
-    elif text == "👤 User Info":
+    elif text == "🏅 𝐔sᴇʀ 𝐈ɴғᴏ":
         context.user_data['admin_action'] = 'user_info'
         await update.message.reply_text("👤 Send User ID to get info")
         
-    elif text == "📢 Broadcast":
+    elif text == "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ":
         context.user_data['admin_action'] = 'broadcast'
         await update.message.reply_text("📢 Send Message To Broadcast")
         
-    elif text == "🎁 Generate Gift":
+    elif text == "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ":
         context.user_data['admin_action'] = 'generate_gift'
         await update.message.reply_text("🎁 Send Amount and Name (space separated)\nExample: 5 Special Gift")
         
-    elif text == "📋 Referral Stats":
+    elif text == "📑 𝐑ᴇғᴇʀʀᴀʟ":
         await referral_stats_command(update, context)
         
-    elif text == "📊 Stats":
+    elif text == "📊 𝐒ᴛᴀᴛs":
         await admin_stats(update, context)
         
-    elif text == "🔙 Main Menu":
+    elif text == "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ":
         # Clear admin mode and action
         context.user_data['admin_mode'] = False
         if 'admin_action' in context.user_data:
@@ -1393,12 +1394,12 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             fail_count = 0
 
             broadcast_msg = f"""
-📢 [ IMPORTANT NOTICE ] 📢 
+───୨[𝍖🔖 𝐀ɴɴᴏᴜɴᴄᴇ𝐌ᴇɴᴛ 🔖𝍖]ৎ───
 
 {message}
 
-────────────────────
- Thank You For Using Our Service 🙏
+──── ୨୧ ──────── ୨୧ ──────── 
+ 🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
 """
             
             for uid in users:
@@ -1430,19 +1431,18 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 
                 # Broadcast the new gift code
                 broadcast_msg = f"""
-🎉 [ NEW GIFT CODE ] 🎉
+───୨[𝍖🎁 𝐍ᴇᴡ 𝐆ɪғᴛ 🎁𝍖]ৎ───
+─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ────
+🎲 𝐆ɪғᴛ ➤  {name}
+💶 𝐀ᴍᴏᴜɴᴛ ➤ {amount} 💎
+🔑 𝐂ᴏᴅᴇ ➤ {code}
+⏰ 𝐕ᴀʟɪᴅ 𝐔ɴᴛɪʟ 𝐂ʟᴀɪᴍ
 
-🎁 Gift: {name}
-💰 Amount: {amount} 🪙
-🔑 Code: {code}
-⏰ Valid until claimed
-
-📝 How to claim:
-1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ button
-2. Enter the code: {code}
-3. Get {amount} 🪙 credits instantly!
-
-Hurry up! First come first served.
+╰┈➤ 📝 𝐇ᴏᴡ 𝐓ᴏ 𝐂ʟᴀɪᴍ »
+⊹ 𝐂ʟɪᴄᴋ 𝐎ɴ 🎁 𝐆ɪғᴛ 
+⊹ 𝐄ɴᴛᴇʀ 𝐓ʜᴇ » {code}
+⊹ 𝐆ᴇᴛ {amount} 💎 𝐂ʀᴇᴅɪᴛs 𝐈ɴsᴛᴀɴᴛ ⚡
+-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
 """
                 
                 # Broadcast to all users
@@ -1528,9 +1528,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
     
-    # Clear any existing pagination data
-    if 'pagination' in context.user_data:
-        del context.user_data['pagination']
+    # Clear any existing states
+    context.user_data.pop('pagination', None)
+    context.user_data.pop('in_search_mode', None)
+    context.user_data.pop('waiting_for_gift_code', None)
+    context.user_data.pop('admin_mode', None)
+    context.user_data.pop('admin_action', None)
     
     # Check for referral code in start parameters
     referred_by = None
@@ -1570,7 +1573,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 log_audit_event(user_id, "REFERRAL_JOIN", f"Referred by: {referred_by}")
             
             add_verification_record(user_id, True, "New user - initial credits granted")
-            message = "✅ Verification Successful! 🎉🎊\n\n🎁You've Received 2 Free Credits\n\nEnjoy Using Our Service 🙏"
+            message = "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 🎉🎊\n\n🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
             
             await update.message.reply_photo(
                 photo=START_IMAGE_URL,
@@ -1583,15 +1586,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             add_verification_record(user_id, True, "Existing user - membership verified")
             await update.message.reply_photo(
                 photo=START_IMAGE_URL,
-                caption="👋 Welcome Back User • Enjoy The Bot 🙏",
+                caption="🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ\n\n🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂",
                 reply_markup=get_main_keyboard()
             )
     else:
         # User hasn't joined both channels, show join buttons
         keyboard = [
-            [InlineKeyboardButton("📢 Join Channel 1", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("📢 Join Channel 2", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("✅ Verify Membership", callback_data="verify")]
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🟢 𝐕ᴇʀɪғʏ", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -1599,14 +1602,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_photo(
             photo=VERIFY_IMAGE_URL,
-            caption="[ 🙏 Please Join Our Channels ]\n\n"
-            "📌 To Use This Bot You Must ➜\n\n"
-            "🔒 Join Both Official Channels\n"
-            "🔓 Click On Verify\n\n"
-            "🎁Reward ➜ After Successful Verification You Get\n"
-            "🪙 2 Free Credits\n\n"
-            "────────────────────\n"
-            "💰 Buy Unlimited Credits & Ad 👉 @pvt_s1n",
+            caption="───୨[𝍖 𝐙ᴀʀᴋᴏ 𓆗 𝐎ꜱɪɴᴛ 𝍖]ৎ───\n\n"
+            "🛡️ 𝐓𝐨 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 𝐘ᴏᴜ 𝐌ᴜsᴛ »\n\n"
+            "🔒 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐎ғғɪᴄɪᴀʟ 𝐂ʜᴀɴɴᴇʟ\n"
+            "🟢 𝐂ʟɪᴄᴋ 𝐎ɴ 𝐕ᴇʀɪғʏ\n\n"
+            "🎁 𝐑ᴇᴡᴀʀᴅ : ̗̀➛ 𝐀ғᴛᴇʀ 𝐒ᴜᴄᴄᴇss 𝐕ᴇʀɪғʏ 𝐘ᴏᴜ 𝐆ᴇᴛ 🍒\n"
+            "💶 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛs 💎\n\n"
+            "──── ୨୧ ──────── ୨୧ ──────── ୨୧ ──────── \n"
+            "♈ 𝐁ᴜʏ 𝐔ɴʟɪᴍɪᴛᴇᴅ 𝐂ʀᴇᴅɪᴛs 💎 & 𝐀𝐏𝐈 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @pvt_s1n",
             reply_markup=reply_markup
         )
 
@@ -1635,15 +1638,15 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Show success message
             try:
                 await query.message.edit_caption(
-                    caption="✅ Verification Successful! 🎉🎊\n\n"
-                    "🎁You've Received 2 Free Credits\n\n"
-                    "Enjoy Using Our Service 🙏"
+                    caption="🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
+                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
+                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                 )
             except:
                 await query.message.reply_text(
-                    "✅ Verification Successful! 🎉🎊\n\n"
-                    "🎁You've Received 2 Free Credits\n\n"
-                    "Enjoy Using Our Service 🙏"
+                    "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
+                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
+                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                 )
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
         else:
@@ -1656,15 +1659,15 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 try:
                     await query.message.edit_caption(
-                        caption="✅ Verification Successful! 🎉🎊\n\n"
-                        "🎁You've Received 2 Free Credits\n\n"
-                        "Enjoy Using Our Service 🙏"
+                        caption="🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
+                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
+                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                     )
                 except:
                     await query.message.reply_text(
-                        "✅ Verification Successful! 🎉🎊\n\n"
-                        "🎁You've Received 2 Free Credits\n\n"
-                        "Enjoy Using Our Service 🙏"
+                        "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
+                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
+                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                     )
             else:
                 # Already received credits, just update verification status
@@ -1674,13 +1677,13 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 try:
                     await query.message.edit_caption(
-                        caption="👋 Welcome Back User.\n\n"
-                        "?? Enjoy The Bot 🙏"
+                        caption="🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ\n\n"
+                        "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                     )
                 except:
                     await query.message.reply_text(
-                        "👋 Welcome Back User.\n\n"
-                        "🔓 Enjoy The Bot 🙏"
+                        "🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ.\n\n"
+                        "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
                     )
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
     else:
@@ -1688,28 +1691,28 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         add_verification_record(user_id, False, "Verification failed - not member of channels")
         
         keyboard = [
-            [InlineKeyboardButton("📢 Join Channel 1", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("📢 Join Channel 2", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("🔄 Retry", callback_data="verify")]
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🔄 𝐑ᴇᴛʀʏ", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         try:
             await query.message.edit_caption(
-                caption="❌ [ WARNING ] ❌\n\n"
-                "📌 You Have Not Joined Both Channels Yet!\n\n"
-                "❌ Please Join Both Channels First ✅\n"
-                "🔄 Then Click Retry🔄\n\n"
-                "────────────────────",
+                caption="───୨[𝍖🚨 𝐖ᴀʀɴɪɴɢ 🚨𝍖]ৎ───\n\n"
+                "🛑 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐍ᴏᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐘ᴇᴛ\n\n"
+                "❌ 𝐏ʟᴇᴀsᴇ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐅ɪʀsᴛ »\n"
+                "🔄 𝐓ʜᴇɴ 𝐂ʟɪᴄᴋ 𝐑ᴇᴛʀʏ 🔄\n\n"
+                "﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌",
                 reply_markup=reply_markup
             )
         except:
             await query.message.reply_text(
-                "❌ [ WARNING ] ❌\n\n"
-                "📌 You Have Not Joined Both Channels Yet!\n\n"
-                "❌ Please Join Both Channels First ✅\n"
-                "🔄 Then Click Retry🔄\n\n"
-                "────────────────────",
+                "───୨[𝍖🚨 𝐖ᴀʀɴɪɴɢ 🚨𝍖]ৎ───\n\n"
+                "🛑 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐍ᴏᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐘ᴇᴛ\n\n"
+                "❌ 𝐏ʟᴇᴀsᴇ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐅ɪʀsᴛ »\n"
+                "🔄 𝐓ʜᴇɴ 𝐂ʟɪᴄᴋ 𝐑ᴇᴛʀʏ 🔄\n\n"
+                "﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌",
                 reply_markup=reply_markup
             )
 
@@ -1767,7 +1770,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "profile":
         user_id = update.effective_user.id
         users = load_users()
-        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown"})
+        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown")
         await show_profile(update, context, user_id, user_data, edit_message=True)
     
     elif query.data == "back_to_main":
@@ -1778,6 +1781,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query.data.startswith("copy_"):
         await handle_copy_code(update, context)
+    
+    elif query.data.startswith("page_"):
+        await handle_pagination(update, context)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -1787,10 +1793,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'pagination' in context.user_data:
         del context.user_data['pagination']
     
+    # Define user menu buttons
+    user_menu_buttons = [
+        "🔍 𝐒ᴇᴀʀᴄʜ",
+        "💎 𝐂ʀᴇᴅɪᴛs",
+        "🎁 𝐆ɪғᴛ",
+        "🎖️ 𝐏ʀᴏғɪʟᴇ",
+        "🛍️ 𝐒ʜᴏᴘ",
+        "💠 𝐑ᴇғᴇʀ",
+        "☎️ 𝐇ᴇʟᴘ",
+        "🧧 𝐀ᴅᴍɪɴ"
+    ]
+    
     # Check if we're waiting for a gift code
     if context.user_data.get('waiting_for_gift_code', False):
-        await process_gift_code(update, context)
-        return
+        # If user sends a menu button while waiting for gift code, cancel the gift code state
+        if text in user_menu_buttons:
+            context.user_data['waiting_for_gift_code'] = False
+        else:
+            await process_gift_code(update, context)
+            return
+    
+    # If text is a menu button, reset all states
+    if text in user_menu_buttons:
+        context.user_data['in_search_mode'] = False
+        context.user_data['waiting_for_gift_code'] = False
+        context.user_data['admin_mode'] = False
+        if 'admin_action' in context.user_data:
+            del context.user_data['admin_action']
     
     # Check if user is admin and in admin mode
     is_admin_user = await is_admin(user_id)
@@ -1798,7 +1828,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_admin_user and admin_mode:
         # Handle admin panel actions
-        if text in ["➕ Add Credits", "🔢 Set Credits", "👤 User Info", "📢 Broadcast", "🎁 Generate Gift", "📋 Referral Stats", "📊 Stats", "🔙 Main Menu"]:
+        if text in ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]:
             await handle_admin_panel(update, context)
             return
         elif 'admin_action' in context.user_data:
@@ -1831,13 +1861,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif text == "💎 𝐂ʀᴇᴅɪᴛs":
         await credits(update, context)
-    elif text == "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ":
+    elif text == "🎁 𝐆ɪғᴛ":
         await gift_code_command(update, context)
     elif text == "🎖️ 𝐏ʀᴏғɪʟᴇ":
         await me(update, context)
     elif text == "🛍️ 𝐒ʜᴏᴘ":
         await buy_command(update, context)
-    elif text == "🥂 𝐑ᴇғᴇʀ":
+    elif text == "💠 𝐑ᴇғᴇʀ":
         await show_referral_info(update, context)
     elif text == "☎️ 𝐇ᴇʟᴘ":
         # Send as photo with caption
@@ -1911,7 +1941,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Add credits info to each page
     credits_left = users[str(user_id)]["credits"]
     for i in range(len(pages)):
-        pages[i] += f"\n✅ Credits Left ➜ {credits_left} 🪙"
+        pages[i] += f"\n💶 𝐂ʀᴇᴅɪᴛ 𝐋ᴇғᴛ : ̗̀➛ {credits_left} 💎"
     
     # Store pagination data in context
     context.user_data['pagination'] = {
@@ -1939,7 +1969,7 @@ async def credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send as photo with caption
     await update.message.reply_photo(
         photo=CREDITS_IMAGE_URL, 
-        caption=f"✅ Your Credit ➜ {c} 🪙"
+        caption=f"💶 𝐘ᴏᴜʀ 𝐂ʀᴇᴅɪᴛ : ̗̀➛ {c} 💎"
     )
 
 async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2010,10 +2040,9 @@ def main():
     app.add_handler(CommandHandler("referralstats", referral_stats_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_)"))
-    app.add_handler(CallbackQueryHandler(handle_pagination, pattern="^page_"))
-
-    print("🙏 Service Is Running...")
+    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_)"))
+    
+    print("⚡𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖 ➣➣➣")
     app.run_polling()
 
 if __name__ == "__main__":
