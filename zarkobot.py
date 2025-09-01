@@ -1778,7 +1778,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "profile":
         user_id = update.effective_user.id
         users = load_users()
-        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown")
+        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown"})
         await show_profile(update, context, user_id, user_data, edit_message=True)
     
     elif query.data == "back_to_main":
@@ -2054,4 +2054,5 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
+
     main()
