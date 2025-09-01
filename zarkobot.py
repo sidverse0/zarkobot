@@ -7,6 +7,8 @@ import random
 import string
 import re
 import os
+import qrcode
+import io
 from datetime import datetime, timedelta
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
@@ -53,6 +55,7 @@ CHANNEL_USERNAME = "@zarkoworld"   # Main channel
 CHANNEL_USERNAME_2 = "@chandhackz_78"  # Second channel
 OWNER_USERNAME = "@pvt_s1n"    # Your username
 ADMIN_ID = 7975903577  # Your user ID
+UPI_ID = "reyazmbi2003@okaxis"  # Your UPI ID
 
 LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8250754854:64fCZifF")
 API_URL = "https://leakosintapi.com/"
@@ -68,35 +71,31 @@ VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
+BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"  # Replace with your banned image URL
+DEPOSIT_IMAGE_URL = "https://files.catbox.moe/deposit_image.jpg"  # Replace with your deposit image URL
+
+# Payment packages (amount in INR : credits)
+PAYMENT_PACKAGES = {
+    10: 100,
+    20: 150,
+    30: 200,
+    40: 400,
+    50: 500
+}
 
 # Constants for messages (normalized text)
-HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
-﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-☞📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
-
-☞📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
-
-☞👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
-
-> 𝐈 𝐒ᴇᴀʀᴄʜ 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
--ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
-
-➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎
-➛ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
+HELP_TEXT = """Help
+search no 91XXXXXXXXXX & 79XXXXXX68
+email - example@gmail.com
+name - search any name
+contact ☎️ @Pvt_s1n
 """
 
-SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
-  ﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-✮📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
-
-✮📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
-
-✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
-
-> 𝐈 𝐒ᴇᴀʀᴄʜ 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
-﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎 
-➛ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
+SEARCH_PROMPT_TEXT = """Help
+search no 91XXXXXXXXXX & 79XXXXXX68
+email - example@gmail.com
+name - search any name
+contact ☎️ @Pvt_s1n
 """
 
 # ==== Firebase Data Functions ====
@@ -122,6 +121,79 @@ def save_users(users):
             db.collection('users').document(str(user_id)).set(user_data)
     except Exception as e:
         print(f"Error saving users to Firebase: {e}")
+
+def load_banned_users():
+    """Load banned users from Firebase"""
+    if db is None:
+        return {}
+    try:
+        banned_ref = db.collection('banned_users')
+        docs = banned_ref.stream()
+        banned_users = {}
+        for doc in docs:
+            banned_users[doc.id] = doc.to_dict()
+        return banned_users
+    except Exception as e:
+        print(f"Error loading banned users from Firebase: {e}")
+        return {}
+
+def save_banned_users(banned_users):
+    """Save banned users to Firebase"""
+    if db is None:
+        return
+    try:
+        for user_id, ban_data in banned_users.items():
+            db.collection('banned_users').document(str(user_id)).set(ban_data)
+    except Exception as e:
+        print(f"Error saving banned users to Firebase: {e}")
+
+def load_search_locks():
+    """Load search lock settings from Firebase"""
+    if db is None:
+        return {"number": False, "email": False, "name": False}
+    try:
+        locks_ref = db.collection('settings').document('search_locks')
+        doc = locks_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        return {"number": False, "email": False, "name": False}
+    except Exception as e:
+        print(f"Error loading search locks from Firebase: {e}")
+        return {"number": False, "email": False, "name": False}
+
+def save_search_locks(locks):
+    """Save search lock settings to Firebase"""
+    if db is None:
+        return
+    try:
+        db.collection('settings').document('search_locks').set(locks)
+    except Exception as e:
+        print(f"Error saving search locks to Firebase: {e}")
+
+def load_pending_payments():
+    """Load pending payments from Firebase"""
+    if db is None:
+        return {}
+    try:
+        payments_ref = db.collection('pending_payments')
+        docs = payments_ref.stream()
+        payments = {}
+        for doc in docs:
+            payments[doc.id] = doc.to_dict()
+        return payments
+    except Exception as e:
+        print(f"Error loading pending payments from Firebase: {e}")
+        return {}
+
+def save_pending_payments(payments):
+    """Save pending payments to Firebase"""
+    if db is None:
+        return
+    try:
+        for payment_id, payment_data in payments.items():
+            db.collection('pending_payments').document(payment_id).set(payment_data)
+    except Exception as e:
+        print(f"Error saving pending payments to Firebase: {e}")
 
 def update_user(user_id, credits=None, name=None, last_verified=None, initial_credits_given=None, referred_by=None):
     users = load_users()
@@ -208,22 +280,116 @@ def log_audit_event(user_id, event_type, details):
     except Exception as e:
         print(f"Audit log error: {e}")
 
+# ==== Check if user is banned ====
+def is_user_banned(user_id):
+    """Check if a user is banned"""
+    banned_users = load_banned_users()
+    return str(user_id) in banned_users
+
+# ==== Check search type lock ====
+def check_search_type_locked(query):
+    """Check if the search type is locked based on query"""
+    locks = load_search_locks()
+    
+    # Check if query is a phone number
+    if re.match(r'^[\d+]+$', query.replace(" ", "")):
+        return locks.get("number", False), "Phone number searches are currently locked"
+    
+    # Check if query is an email
+    if '@' in query:
+        return locks.get("email", False), "Email searches are currently locked"
+    
+    # Assume it's a name search
+    return locks.get("name", False), "Name searches are currently locked"
+
 # ==== Reply Keyboard Setup ====
 def get_main_keyboard():
     keyboard = [
-        ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ"],
-        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
-        ["☎️ 𝐇ᴇʟᴘ", "🧧 𝐀ᴅᴍɪɴ"]
+        ["🔍 search", "💎 credits", "🎁 gift"],
+        ["🎖️ profile", "🛍️ shop", "💠 refer"],
+        ["💳 deposit", "☎️ help", "🧧 admin"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Choose Options")
 
 def get_admin_keyboard():
     keyboard = [
-        ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ"],
-        ["📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ"],
-        ["📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
+        ["🃏 add credits", "💶 set credits", "🏅 user info"],
+        ["📮 broadcast", "🎁 generate gift", "📑 referral"],
+        ["⛔ ban user", "🔓 unban user", "🔒 lock search"],
+        ["🔓 unlock search", "📊 stats", "🎲 main menu"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Admin Panel")
+
+# ==== Payment Functions ====
+def generate_payment_id():
+    """Generate a unique payment ID"""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+def create_pending_payment(user_id, amount, credits):
+    """Create a pending payment record"""
+    payment_id = generate_payment_id()
+    payments = load_pending_payments()
+    
+    payments[payment_id] = {
+        "user_id": user_id,
+        "user_name": get_user_name(user_id),
+        "amount": amount,
+        "credits": credits,
+        "status": "pending",
+        "created_at": datetime.now().isoformat(),
+        "processed_at": None,
+        "processed_by": None,
+        "reason": None
+    }
+    
+    save_pending_payments(payments)
+    return payment_id
+
+def update_payment_status(payment_id, status, admin_id, reason=None):
+    """Update payment status"""
+    payments = load_pending_payments()
+    
+    if payment_id in payments:
+        payments[payment_id]["status"] = status
+        payments[payment_id]["processed_at"] = datetime.now().isoformat()
+        payments[payment_id]["processed_by"] = admin_id
+        if reason:
+            payments[payment_id]["reason"] = reason
+            
+        save_pending_payments(payments)
+        return True
+    return False
+
+def get_user_name(user_id):
+    """Get user name from database"""
+    users = load_users()
+    uid = str(user_id)
+    return users.get(uid, {}).get("name", "Unknown")
+
+def generate_upi_qr(amount, upi_id):
+    """Generate a UPI QR code for the given amount"""
+    # Create UPI payment URL
+    upi_url = f"upi://pay?pa={upi_id}&pn=Bot Owner&am={amount}&cu=INR"
+    
+    # Generate QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(upi_url)
+    qr.make(fit=True)
+    
+    # Create an image from the QR Code instance
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Save image to bytes buffer
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    
+    return buf
 
 # ==== Gift Code Functions ====
 def generate_gift_code(length=12):
@@ -410,14 +576,26 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
     """Force user to join channels before using any feature"""
     user_id = update.effective_user.id
     
+    # Check if user is banned
+    if is_user_banned(user_id):
+        # Send banned message with image
+        try:
+            await update.message.reply_photo(
+                photo=BANNED_IMAGE_URL,
+                caption="🚫 You are banned due to Violation of our terms and conditions"
+            )
+        except:
+            await update.message.reply_text("🚫 You are banned due to Violation of our terms and conditions")
+        return False
+    
     # Check membership
     is_member = await check_membership(update, context, user_id)
     
     if not is_member:
         keyboard = [
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("🟢 𝐕ᴇʀɪғʏ", callback_data="verify")]
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🟢 verify", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -426,26 +604,26 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
             try:
                 await update.callback_query.message.reply_photo(
                     photo=VERIFY_IMAGE_URL,
-                    caption="🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
+                    caption="🛑 join channel and verify🚨",
                     reply_markup=reply_markup
                 )
             except Exception as e:
                 print(f"Error sending verification message: {e}")
                 await update.callback_query.message.reply_text(
-                    "🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
+                    "🛑 join channel and verify🚨",
                     reply_markup=reply_markup
                 )
         else:
             try:
                 await update.message.reply_photo(
                     photo=VERIFY_IMAGE_URL,
-                    caption="🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
+                    caption="🛑 join channel and verify🚨",
                     reply_markup=reply_markup
                 )
             except Exception as e:
                 print(f"Error sending verification message: {e}")
                 await update.message.reply_text(
-                    "🛑 𝐘ᴏᴜ 𝐌ᴜsᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐀ɴᴅ 𝐕ᴇʀɪғʏ 𝐓ᴏ 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 🚨",
+                    "🛑 join channel and verify🚨",
                     reply_markup=reply_markup
                 )
         return False
@@ -538,7 +716,7 @@ def query_leakosint(query: str):
 def format_results(resp, max_length=4000):
     if "Error" in resp or "Error code" in resp:
         err = resp.get("Error") or resp.get("Error code")
-        return ["🚧⛔ 𝐒ᴇʀᴠᴇʀ 𝐈s 𝐆ᴇᴛᴛɪɴɢ 𝐀ɴ 𝐔ᴘɢʀᴀᴅᴇ » 𝐈ғ 𝐀ɴʏ 𝐂ʀᴇᴅɪᴛ 𝐀ʀᴇ 𝐃ᴇᴅᴜᴄᴛᴇᴅ 𝐅ʀᴏᴍ 𝐘ᴏᴜʀ 𝐀ᴄᴄᴏᴜɴᴛ 𝐊ɪɴᴅʟʏ 𝐖ᴀɪᴛ 𝐅ᴏʀ 𝐑ᴇғᴜɴᴅ ⛔🚧"]
+        return ["🚧server is maintenance"]
 
     results = []
     current_result = ""
@@ -579,19 +757,18 @@ def format_results(resp, max_length=4000):
                 continue
 
             result_entry = f"""
-👤 𝐍ᴀᴍᴇ ➤ {name}
-👨 𝐅ᴀᴛʜᴇʀ's 𝐍ᴀᴍᴇ ➤ {father}
-📞 𝐌ᴏʙɪʟᴇ ➤ {mobile}
-📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ1 ➤ {alt1}
-📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ2 ➤ {alt2}
-📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ3 ➤ {alt3}
-📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ4 ➤ {alt4}
-📱 𝐀ʟᴛ 𝐍ᴜᴍʙᴇʀ5 ➤ {alt5}
-📧 𝐄ᴍᴀɪʟ ➤ {email}
-🪪 𝐀ᴀᴅʜᴀʀ 𝐈𝐃 ➤ {doc}
-🧭 𝐂ɪʀᴄʟᴇ ➤ {region}
-🏠 𝐀ᴅᴅʀᴇss ➤ {address}
-──── ୨୧ ──────── ୨୧ ────
+👤 name- {name}
+👨 father-{father}
+📞 mobile- {mobile}
+📱 alt number1- {alt1}
+📱 alt number2- {alt2}
+📱 alt number3- {alt3}
+📱 alt number 4- {alt4}
+📱 alt number5 - {alt5}
+📧 email- {email}
+🪪 aadhar- {doc}
+🧭 circle- {region}
+🏠 address- {address}
 """
             
             # If adding this entry would exceed the max length, start a new message
@@ -605,7 +782,7 @@ def format_results(resp, max_length=4000):
             results_count += 1
 
     if results_count == 0:
-        return ["🚫 𝐃ᴀᴛᴀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ 𝐈ɴ 𝐃ᴀᴛᴀʙᴀsᴇ » 𝐓ʀʏ 𝐀ɴᴏᴛʜᴇʀ 🚫"]
+        return ["🚫 data not found"]
     
     # Add the last result if it exists
     if current_result:
@@ -640,18 +817,12 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 
     # Create profile message
     profile_msg = f"""
-🃏 𝐍ᴀᴍᴇ ➤ {name} 
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
-🀄 𝐔sᴇʀ 𝐈𝐃 ➤ {user_id}
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
-🎴 𝐔sᴇʀ 𝐂ᴏᴅᴇ ➤ {user_hash}
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
-💎 𝐂ʀᴇᴅɪᴛ ➤ {credits} 💎
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
-📅 𝐉ᴏɪɴᴇᴅ ➤ {join_date_display}
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ──
-🔖 𝐔ᴘᴅᴀᴛᴇᴅ ➤ {last_update}
-──── ୨୧ ──────── ୨୧ ────
+🃏 name - {name} 
+🀄 user ID - {user_id}
+🎴 user code - {user_hash}
+💎 credit - {credits} 💎
+📅 joined : {join_date_display}
+🔖 updated : {last_update}
 """
 
     if edit_message and hasattr(update, 'callback_query'):
@@ -681,7 +852,7 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
     uid = str(user_id)
     
     if uid not in users:
-        await update.message.reply_text("❌ 𝐔sᴇʀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ » 𝐏ʟᴇᴀsᴇ 𝐔sᴇ /start 𝐅ɪʀsᴛ 🛑")
+        await update.message.reply_text("❌ user not found /start first")
         return
         
     user_data = users[uid]
@@ -694,20 +865,14 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
     referral_link = f"https://t.me/{bot_username}?start={referral_code}"
     
     referral_msg = f"""
-───୨[𝍖💶 𝐑ᴇғᴇʀ 𝐀ɴᴅ 𝐄ᴀʀɴ 💶𝍖]ৎ───
-꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ 
+refere and earn
 
-💎 𝐘ᴏᴜʀ 𝐑ᴇғᴇʀ 𝐋ɪɴᴋ ➤
+your refer link 
 {referral_link}
 
-🎯 𝐘ᴏᴜʀ 𝐑ᴇғᴇʀ 𝐃ᴇᴛᴀɪʟ »
-👥 𝐓ᴏᴛᴀʟ 𝐑ᴇғᴇʀᴀʟs ➤ {referrals}
-💶 𝐓ᴏᴛᴀʟ 𝐂ʀᴇᴅɪᴛ 𝐄ᴀʀɴ ➤ {referral_credits} 💎
-
-🏅 𝐑ᴇғᴇʀ 𝐑ᴇᴡᴀʀᴅs »
-» 𝐄ᴀᴄʜ 𝐑ᴇғᴇʀ 𝐘ᴏᴜ 𝐆ᴇᴛ 2 💎 𝐂ʀᴇᴅɪᴛs
-» 𝐘ᴏᴜʀ 𝐅ʀɪᴇɴᴅs 𝐆ᴇᴛ 2 💎 𝐁ᴏɴᴜs 𝐂ʀᴇᴅɪᴛ
--ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
+🎯 your refer -
+👥 total refer -  {referrals}
+💶 total credit - {referral_credits} 💎
 """
 
     # Send as photo with caption
@@ -725,44 +890,10 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     buy_message = """
-──୨[𝍖🛍️ 𝐂ʀᴇᴅɪᴛ 𝐒ʜᴏᴘ 🛍️𝍖]ৎ──
-꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷
-
-1️⃣ Starter Pack 🔰 
-➤10 Credits → ₹25 
-🎁Bonus: +2 Free Credits 
-📈Best for small searches
-────────────────────
-
-2️⃣ Value Pack 🔒 
-➤25 Credits → ₹50 
-🎁Bonus: +5 Free Credits 
-📈Perfect for regular users
-────────────────────
-
-3️⃣ Super Saver Pack 🚀 
-➤50 Credits → ₹90 
-🎁Bonus: +15 Free Credits 
-📈More searches, less money
-────────────────────
-
-4️⃣ Pro Pack 🏆 
-➤75 Credits → ₹120 
-🎁Bonus: +25 Free Credits 
-📈Best for heavy users
-────────────────────
-
-5️⃣ Mega Pack 💎 
-➤100 Credits → ₹150 
-🎁Bonus: +40 Free Credits 
-📈Maximum value & savings
-﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-🍒 𝐅ᴏʀ 𝐃ᴇᴠᴇʟᴏᴘᴇʀ 𝐏ʟᴀɴ »
-
-📲 𝐁ᴜʏ 𝐀𝐏𝐈 - 1 𝐌𝐎𝐍𝐓𝐇 - ₹399 🏅
-💳 𝐁ᴜʏ 𝐀𝐏𝐈 - 𝐋𝐈𝐅𝐄𝐓𝐈𝐌𝐄 - ₹1999 🎖️
-📞 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ 𝐅ᴏʀ 𝐌ᴏʀᴇ » @pvt_s1n
-──── ୨୧ ──────── ୨୧ ────
+buy any thing
+shop 
+contact 
+owner - pvt_s1n
 """
 
     # Send as photo with caption
@@ -790,7 +921,7 @@ async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send prompt message
     await update.message.reply_photo(
         photo=GIFT_IMAGE_URL,
-        caption="──୨[𝍖🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 🎁𝍖]ৎ──\n\nׂ╰┈➤ 𝐏ʟᴇᴀsᴇ 𝐄ɴᴛᴇʀ 𝐘ᴏᴜʀ 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 𝐁ᴇʟᴏᴡ👇"
+        caption="gift code \n\nׂ please enter code"
     )
 
 async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -810,12 +941,12 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = str(user_id)
     
     if uid not in users:
-        await update.message.reply_text("❌ 𝐔sᴇʀ 𝐍ᴏᴛ 𝐅ᴏᴜɴᴅ » 𝐏ʟᴇᴀsᴇ 𝐔sᴇ /start 𝐅ɪʀsᴛ 🛑")
+        await update.message.reply_text("❌ user not found /start first🛑")
         return
     
     # Check if user has already claimed this code
     if gift_code in users[uid].get("claimed_gift_codes", []):
-        await update.message.reply_text("🚫 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐀ʟʀᴇᴀᴅʏ 𝐂ʟᴀɪᴍᴇᴅ 𝐓ʜɪs 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 🥂")
+        await update.message.reply_text("🚫 already claimed🥂")
         return
     
     # Try to claim the gift code
@@ -838,12 +969,10 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         gift_name = gift_codes[gift_code].get("name", "Unknown Gift")
         
         broadcast_msg = f"""
-────୨[𝍖🎁 𝐂ᴏᴅᴇ 𝐂ʟᴀɪᴍᴇᴅ 🎁𝍖]ৎ────
-⊹ ࣪ ﹏𓊝﹏𓂁﹏⊹ ࣪ ˖⊹ ࣪ ﹏𓊝﹏𓂁﹏⊹ ࣪ ˖
-🎲 𝐆ɪғᴛ ➤ {gift_name}
-💶 𝐀ᴍᴏᴜɴᴛ ➤ {result} 💎
-🃏 𝐂ʟᴀɪᴍᴇᴅ 𝐁ʏ ➤ {users[uid]['name']}
-🎖️ 𝐈𝐃 ➤ {user_id}
+🎲 gift {gift_name}
+💶 amount {result} 💎
+🃏 claimed by {users[uid]['name']}
+🎖️ id  {user_id}
 """
         
         # Broadcast to all users
@@ -851,9 +980,9 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Send success message to user
         await update.message.reply_text(
-            f"🏅 𝐆ɪғᴛ 𝐂ᴏᴅᴇ 𝐂ʟᴀɪᴍᴇᴅ 𝐒ᴜᴄᴄᴇssFᴜʟʟʏ!\n\n"
-            f"🎁 𝐘ᴏᴜ 𝐑ᴇᴄᴇɪᴠᴇᴅ ➤ {result} 💎\n"
-            f"💶 𝐍ᴇᴡ 𝐁ᴀʟᴀɴᴄᴇ ➤ {users[uid]['credits']} 💎"
+            f"🏅 gift claimed successfully!\n\n"
+            f"🎁 you received - {result} 💎\n"
+            f"💶 new balance - {users[uid]['credits']} 💎"
         )
         
         # Log the claim
@@ -875,7 +1004,7 @@ async def broadcast_to_all_users(context, message):
 # ==== Fast Animated Spinner ====
 async def show_spinner(update, context, message):
     spinner_frames = [
-        "✈︎ᯓ ✈︎ 𝐒ᴇᴀʀᴄʜɪɴɢ ✈︎ᯓ ✈︎",
+        "search...",
         "⏳ Analysing Data....."
     ]
     
@@ -899,14 +1028,11 @@ async def notify_user_credits(context, user_id, action, amount, new_balance):
     """Notify user when admin modifies their credits"""
     try:
         message = f"""
-───୨[𝍖💶 𝐂ʀᴇᴅɪᴛ 𝐔ᴘᴅᴀᴛᴇ 💶𝍖]ৎ───
-﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-🧧 𝐎ᴡɴᴇʀ 𝐇ᴀs {action} {amount} 💎 𝐓ᴏ 𝐘ᴏᴜʀ 𝐀ᴄᴄᴏᴜɴᴛ
+credit update 
 
-💶 𝐍ᴇᴡ 𝐁ᴀʟᴀɴᴄᴇ ➤ {new_balance} 💎
+🧧 owner has {action} {amount} 💎 to your account 
 
-🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
-──── ୨୧ ──────── ୨୧ ──
+💶 new balance {new_balance} 💎
 """
         await context.bot.send_message(chat_id=user_id, text=message)
     except Exception as e:
@@ -1052,12 +1178,10 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fail_count = 0
 
     broadcast_msg = f"""
-──୨[𝍖🔖 𝐀ɴɴᴏᴜɴᴄᴇ𝐌ᴇɴᴛ 🔖𝍖]ৎ──
+announcements -
 
 {message}
 
-──── ୨୧ ──────── ୨୧ ── 
- 🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
 """
     
     for uid in users:
@@ -1095,18 +1219,11 @@ async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TY
         
         # Broadcast the new gift code
         broadcast_msg = f"""
-───୨[𝍖🎁 𝐍ᴇᴡ 𝐆ɪғᴛ 🎁𝍖]ৎ───
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ────
-🎲 𝐆ɪғᴛ ➤  {name}
-💶 𝐀ᴍᴏᴜɴᴛ ➤ {amount} 💎
-🔑 𝐂ᴏᴅᴇ ➤ {code}
-⏰ 𝐕ᴀʟɪᴅ 𝐔ɴᴛɪʟ 𝐂ʟᴀɪᴍ
-
-╰┈➤ 📝 𝐇ᴏᴡ 𝐓ᴏ 𝐂ʟᴀɪᴍ »
-⊹ 𝐂ʟɪᴄᴋ 𝐎ɴ 🎁 𝐆ɪғᴛ 
-⊹ 𝐄ɴᴛᴇʀ 𝐂ᴏᴅᴇ » {code}
-⊹ 𝐆ᴇᴛ {amount} 💎 𝐂ʀᴇᴅɪᴛs 𝐈ɴsᴛᴀɴᴛ ⚡
--ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
+new gift 
+🎲  gift  {name}
+💶 amount - {amount} 💎
+🔑 code -  {code}
+⏰ valid until clim
 """
         
         # Broadcast to all users
@@ -1236,6 +1353,412 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
     
     await query.edit_message_text(list_msg, reply_markup=reply_markup)
 
+# ==== Ban/Unban User Functions ====
+async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ban a user by ID"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) < 1:
+        await update.message.reply_text("❌ Use /ban <user_id> [reason]")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        reason = " ".join(context.args[1:]) if len(context.args) > 1 else "Violation of terms and conditions"
+        
+        # Load banned users
+        banned_users = load_banned_users()
+        
+        # Add user to banned list
+        banned_users[str(target_user_id)] = {
+            "banned_by": user_id,
+            "banned_at": datetime.now().isoformat(),
+            "reason": reason
+        }
+        
+        save_banned_users(banned_users)
+        
+        log_audit_event(user_id, "USER_BANNED", f"Target: {target_user_id}, Reason: {reason}")
+        
+        await update.message.reply_text(f"✅ User {target_user_id} has been banned.\nReason: {reason}")
+        
+    except ValueError:
+        await update.message.reply_text("❌ Invalid User ID")
+
+async def unban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Unban a user by ID"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Use /unban <user_id>")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        
+        # Load banned users
+        banned_users = load_banned_users()
+        
+        # Remove user from banned list
+        if str(target_user_id) in banned_users:
+            del banned_users[str(target_user_id)]
+            save_banned_users(banned_users)
+            
+            log_audit_event(user_id, "USER_UNBANNED", f"Target: {target_user_id}")
+            
+            await update.message.reply_text(f"✅ User {target_user_id} has been unbanned.")
+        else:
+            await update.message.reply_text("❌ User is not banned.")
+        
+    except ValueError:
+        await update.message.reply_text("❌ Invalid User ID")
+
+# ==== Lock/Unlock Search Functions ====
+async def lock_search_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Lock a search type (number, email, name)"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Use /lock <number|email|name>")
+        return
+
+    search_type = context.args[0].lower()
+    
+    if search_type not in ["number", "email", "name"]:
+        await update.message.reply_text("❌ Invalid search type. Use: number, email, or name")
+        return
+    
+    # Load current locks
+    locks = load_search_locks()
+    
+    # Update the lock
+    locks[search_type] = True
+    save_search_locks(locks)
+    
+    log_audit_event(user_id, "SEARCH_LOCKED", f"Type: {search_type}")
+    
+    await update.message.reply_text(f"✅ {search_type.capitalize()} search has been locked.")
+
+async def unlock_search_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Unlock a search type (number, email, name)"""
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Use /unlock <number|email|name>")
+        return
+
+    search_type = context.args[0].lower()
+    
+    if search_type not in ["number", "email", "name"]:
+        await update.message.reply_text("❌ Invalid search type. Use: number, email, or name")
+        return
+    
+    # Load current locks
+    locks = load_search_locks()
+    
+    # Update the lock
+    locks[search_type] = False
+    save_search_locks(locks)
+    
+    log_audit_event(user_id, "SEARCH_UNLOCKED", f"Type: {search_type}")
+    
+    await update.message.reply_text(f"✅ {search_type.capitalize()} search has been unlocked.")
+
+# ==== Payment Functions ====
+async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle deposit button press"""
+    user_id = update.effective_user.id
+    
+    # Force membership check
+    if not await force_membership_check(update, context):
+        return
+    
+    # Create inline keyboard for payment packages
+    keyboard = []
+    for amount, credits in PAYMENT_PACKAGES.items():
+        keyboard.append([InlineKeyboardButton(f"₹{amount} - {credits} 💎", callback_data=f"deposit_{amount}")])
+    
+    keyboard.append([InlineKeyboardButton("☎️ Contact Owner", url=f"https://t.me/{OWNER_USERNAME[1:]}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Send deposit message with image
+    deposit_msg = """
+💳 Deposit Credits
+
+Choose a package:
+
+• ₹10 - 100 💎
+• ₹20 - 150 💎  
+• ₹30 - 200 💎
+• ₹40 - 400 💎
+• ₹50 - 500 💎
+
+Click on a package to generate payment QR code.
+"""
+    
+    await update.message.reply_photo(
+        photo=DEPOSIT_IMAGE_URL,
+        caption=deposit_msg,
+        reply_markup=reply_markup
+    )
+
+async def handle_deposit_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle deposit package selection"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    data = query.data
+    
+    if not data.startswith("deposit_"):
+        return
+    
+    amount = int(data.split("_")[1])
+    credits = PAYMENT_PACKAGES.get(amount, 0)
+    
+    if credits == 0:
+        await query.edit_message_text("❌ Invalid package selected.")
+        return
+    
+    # Generate payment ID
+    payment_id = create_pending_payment(user_id, amount, credits)
+    
+    # Generate QR code
+    qr_buffer = generate_upi_qr(amount, UPI_ID)
+    
+    # Create payment message
+    payment_msg = f"""
+💳 Payment Details
+
+Amount: ₹{amount}
+Credits: {credits} 💎
+UPI ID: {UPI_ID}
+
+Please scan the QR code or send payment to the UPI ID above.
+
+After payment, click "I've Paid" below.
+"""
+    
+    # Create inline keyboard
+    keyboard = [
+        [InlineKeyboardButton("📱 Pay Now", url=f"upi://pay?pa={UPI_ID}&pn=Bot Owner&am={amount}&cu=INR")],
+        [InlineKeyboardButton("✅ I've Paid", callback_data=f"paid_{payment_id}")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_payment")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Send message with QR code
+    await query.message.reply_photo(
+        photo=qr_buffer,
+        caption=payment_msg,
+        reply_markup=reply_markup
+    )
+    
+    # Edit original message to show payment initiated
+    await query.edit_message_caption(caption="Payment initiated. Please check the message below for payment details.")
+
+async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle payment confirmation from user"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    data = query.data
+    
+    if not data.startswith("paid_"):
+        return
+    
+    payment_id = data.split("_")[1]
+    
+    # Load payment details
+    payments = load_pending_payments()
+    payment = payments.get(payment_id)
+    
+    if not payment:
+        await query.edit_message_text("❌ Payment not found. Please contact admin.")
+        return
+    
+    if payment["user_id"] != user_id:
+        await query.edit_message_text("❌ This payment doesn't belong to you.")
+        return
+    
+    if payment["status"] != "pending":
+        await query.edit_message_text(f"❌ Payment already {payment['status']}.")
+        return
+    
+    # Notify admin
+    admin_msg = f"""
+💰 Payment Verification Request
+
+User: {payment['user_name']} (ID: {user_id})
+Amount: ₹{payment['amount']}
+Credits: {payment['credits']} 💎
+Payment ID: {payment_id}
+
+Please verify the payment and take action.
+"""
+    
+    # Create inline keyboard for admin
+    admin_keyboard = [
+        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{payment_id}")],
+        [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{payment_id}")]
+    ]
+    admin_reply_markup = InlineKeyboardMarkup(admin_keyboard)
+    
+    # Send notification to admin
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=admin_msg,
+        reply_markup=admin_reply_markup
+    )
+    
+    # Update user message
+    await query.edit_message_caption(
+        caption="Payment verification request sent to admin. Please wait for approval."
+    )
+    
+    log_audit_event(user_id, "PAYMENT_REQUEST", f"Amount: {payment['amount']}, Credits: {payment['credits']}")
+
+async def handle_payment_approval(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle payment approval/rejection by admin"""
+    query = update.callback_query
+    await query.answer()
+    
+    admin_id = update.effective_user.id
+    if not await is_admin(admin_id):
+        await query.edit_message_text("❌ Admin Only")
+        return
+    
+    data = query.data
+    
+    if not (data.startswith("approve_") or data.startswith("reject_")):
+        return
+    
+    action = "approve" if data.startswith("approve_") else "reject"
+    payment_id = data.split("_")[1]
+    
+    # Load payment details
+    payments = load_pending_payments()
+    payment = payments.get(payment_id)
+    
+    if not payment:
+        await query.edit_message_text("❌ Payment not found.")
+        return
+    
+    if payment["status"] != "pending":
+        await query.edit_message_text(f"❌ Payment already {payment['status']}.")
+        return
+    
+    user_id = payment["user_id"]
+    
+    if action == "approve":
+        # Add credits to user
+        users = load_users()
+        uid = str(user_id)
+        
+        if uid not in users:
+            await query.edit_message_text("❌ User not found.")
+            return
+        
+        users[uid]["credits"] += payment["credits"]
+        users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
+        save_users(users)
+        
+        # Update payment status
+        update_payment_status(payment_id, "approved", admin_id)
+        
+        # Notify user
+        user_msg = f"""
+✅ Payment Approved
+
+Your payment of ₹{payment['amount']} has been approved.
+
+🎉 You received {payment['credits']} 💎
+💰 New balance: {users[uid]['credits']} 💎
+"""
+        
+        await context.bot.send_message(chat_id=user_id, text=user_msg)
+        
+        # Update admin message
+        await query.edit_message_text(f"✅ Payment approved. User {user_id} received {payment['credits']} credits.")
+        
+        log_audit_event(admin_id, "PAYMENT_APPROVED", f"User: {user_id}, Amount: {payment['amount']}, Credits: {payment['credits']}")
+    
+    else:
+        # Reject payment
+        # Ask admin for reason
+        context.user_data['rejecting_payment'] = payment_id
+        await query.edit_message_text("Please provide a reason for rejection:")
+        
+        log_audit_event(admin_id, "PAYMENT_REJECTED", f"User: {user_id}, Amount: {payment['amount']}")
+
+async def handle_rejection_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle rejection reason from admin"""
+    admin_id = update.effective_user.id
+    if not await is_admin(admin_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+    
+    if 'rejecting_payment' not in context.user_data:
+        return
+    
+    payment_id = context.user_data['rejecting_payment']
+    reason = update.message.text
+    
+    # Load payment details
+    payments = load_pending_payments()
+    payment = payments.get(payment_id)
+    
+    if not payment:
+        await update.message.reply_text("❌ Payment not found.")
+        return
+    
+    user_id = payment["user_id"]
+    
+    # Update payment status
+    update_payment_status(payment_id, "rejected", admin_id, reason)
+    
+    # Notify user
+    user_msg = f"""
+❌ Payment Rejected
+
+Your payment of ₹{payment['amount']} has been rejected.
+
+Reason: {reason}
+
+Please contact admin if you think this is a mistake.
+"""
+    
+    await context.bot.send_message(chat_id=user_id, text=user_msg)
+    
+    # Clear the state
+    del context.user_data['rejecting_payment']
+    
+    await update.message.reply_text("✅ Payment rejected. User has been notified.")
+    
+    log_audit_event(admin_id, "PAYMENT_REJECTED", f"User: {user_id}, Amount: {payment['amount']}, Reason: {reason}")
+
+async def handle_cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle payment cancellation"""
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "cancel_payment":
+        await query.edit_message_caption(caption="Payment cancelled.")
+
 # ==== ADMIN PANEL HANDLERS ====
 async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle admin panel button clicks"""
@@ -1246,33 +1769,49 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         
     text = update.message.text
     
-    if text == "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs":
+    if text == "🃏 add credits":
         context.user_data['admin_action'] = 'add_credits'
         await update.message.reply_text("👤 Send User ID and Amount (space separated)\nExample: 123456789 10")
         
-    elif text == "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs":
+    elif text == "💶 set credits":
         context.user_data['admin_action'] = 'set_credits'
         await update.message.reply_text("👤 Send User ID and Amount (space separated)\nExample: 123456789 5")
         
-    elif text == "🏅 𝐔sᴇʀ 𝐈ɴғᴏ":
+    elif text == "🏅 user info":
         context.user_data['admin_action'] = 'user_info'
         await update.message.reply_text("👤 Send User ID to get info")
         
-    elif text == "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ":
+    elif text == "📮 broadcast":
         context.user_data['admin_action'] = 'broadcast'
         await update.message.reply_text("📢 Send Message To Broadcast")
         
-    elif text == "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ":
+    elif text == "🎁 generate gift":
         context.user_data['admin_action'] = 'generate_gift'
         await update.message.reply_text("🎁 Send Amount and Name (space separated)\nExample: 5 Special Gift")
         
-    elif text == "📑 𝐑ᴇғᴇʀʀᴀʟ":
+    elif text == "📑 referral":
         await referral_stats_command(update, context)
         
-    elif text == "📊 𝐒ᴛᴀᴛs":
+    elif text == "⛔ ban user":
+        context.user_data['admin_action'] = 'ban_user'
+        await update.message.reply_text("👤 Send User ID to ban\nExample: 123456789")
+        
+    elif text == "🔓 unban user":
+        context.user_data['admin_action'] = 'unban_user'
+        await update.message.reply_text("👤 Send User ID to unban\nExample: 123456789")
+        
+    elif text == "🔒 lock search":
+        context.user_data['admin_action'] = 'lock_search'
+        await update.message.reply_text("🔒 Send search type to lock (number, email, name)")
+        
+    elif text == "🔓 unlock search":
+        context.user_data['admin_action'] = 'unlock_search'
+        await update.message.reply_text("🔓 Send search type to unlock (number, email, name)")
+        
+    elif text == "📊 stats":
         await admin_stats(update, context)
         
-    elif text == "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ":
+    elif text == "🎲 main menu":
         # Clear admin mode and action
         context.user_data['admin_mode'] = False
         if 'admin_action' in context.user_data:
@@ -1392,12 +1931,10 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             fail_count = 0
 
             broadcast_msg = f"""
-───୨[𝍖🔖 𝐀ɴɴᴏᴜɴᴄᴇ𝐌ᴇɴᴛ 🔖𝍖]ৎ───
+announcements -
 
 {message}
 
-──── ୨୧ ──────── ୨୧ ──────── 
- 🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂
 """
             
             for uid in users:
@@ -1429,18 +1966,11 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 
                 # Broadcast the new gift code
                 broadcast_msg = f"""
-───୨[𝍖🎁 𝐍ᴇᴡ 𝐆ɪғᴛ 🎁𝍖]ৎ───
-─── ⋆⋅☆⋅⋆ ───── ⋆⋅☆⋅⋆ ────
-🎲 𝐆ɪғᴛ ➤  {name}
-💶 𝐀ᴍᴏᴜɴᴛ ➤ {amount} 💎
-🔑 𝐂ᴏᴅᴇ ➤ {code}
-⏰ 𝐕ᴀʟɪᴅ 𝐔ɴᴛɪʟ 𝐂ʟᴀɪᴍ
-
-╰┈➤ 📝 𝐇ᴏᴡ 𝐓ᴏ 𝐂ʟᴀɪᴍ »
-⊹ 𝐂ʟɪᴄᴋ 𝐎ɴ 🎁 𝐆ɪғᴛ 
-⊹ 𝐄ɴᴛᴇʀ 𝐓ʜᴇ » {code}
-⊹ 𝐆ᴇᴛ {amount} 💎 𝐂ʀᴇᴅɪᴛs 𝐈ɴsᴛᴀɴᴛ ⚡
--ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈-ˋˏ✄┈┈┈┈
+new gift 
+🎲  gift  {name}
+💶 amount - {amount} 💎
+🔑 code -  {code}
+⏰ valid until clim
 """
                 
                 # Broadcast to all users
@@ -1465,6 +1995,79 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 
             except ValueError:
                 await update.message.reply_text("❌ Invalid amount. Please use a number.", reply_markup=get_admin_keyboard())
+        
+        elif action == 'ban_user':
+            target_user_id = int(text)
+            reason = "Violation of terms and conditions"
+            
+            # Load banned users
+            banned_users = load_banned_users()
+            
+            # Add user to banned list
+            banned_users[str(target_user_id)] = {
+                "banned_by": user_id,
+                "banned_at": datetime.now().isoformat(),
+                "reason": reason
+            }
+            
+            save_banned_users(banned_users)
+            
+            log_audit_event(user_id, "USER_BANNED", f"Target: {target_user_id}, Reason: {reason}")
+            
+            await update.message.reply_text(f"✅ User {target_user_id} has been banned.\nReason: {reason}", reply_markup=get_admin_keyboard())
+            
+        elif action == 'unban_user':
+            target_user_id = int(text)
+            
+            # Load banned users
+            banned_users = load_banned_users()
+            
+            # Remove user from banned list
+            if str(target_user_id) in banned_users:
+                del banned_users[str(target_user_id)]
+                save_banned_users(banned_users)
+                
+                log_audit_event(user_id, "USER_UNBANNED", f"Target: {target_user_id}")
+                
+                await update.message.reply_text(f"✅ User {target_user_id} has been unbanned.", reply_markup=get_admin_keyboard())
+            else:
+                await update.message.reply_text("❌ User is not banned.", reply_markup=get_admin_keyboard())
+                
+        elif action == 'lock_search':
+            search_type = text.lower()
+            
+            if search_type not in ["number", "email", "name"]:
+                await update.message.reply_text("❌ Invalid search type. Use: number, email, or name", reply_markup=get_admin_keyboard())
+                return
+            
+            # Load current locks
+            locks = load_search_locks()
+            
+            # Update the lock
+            locks[search_type] = True
+            save_search_locks(locks)
+            
+            log_audit_event(user_id, "SEARCH_LOCKED", f"Type: {search_type}")
+            
+            await update.message.reply_text(f"✅ {search_type.capitalize()} search has been locked.", reply_markup=get_admin_keyboard())
+            
+        elif action == 'unlock_search':
+            search_type = text.lower()
+            
+            if search_type not in ["number", "email", "name"]:
+                await update.message.reply_text("❌ Invalid search type. Use: number, email, or name", reply_markup=get_admin_keyboard())
+                return
+            
+            # Load current locks
+            locks = load_search_locks()
+            
+            # Update the lock
+            locks[search_type] = False
+            save_search_locks(locks)
+            
+            log_audit_event(user_id, "SEARCH_UNLOCKED", f"Type: {search_type}")
+            
+            await update.message.reply_text(f"✅ {search_type.capitalize()} search has been unlocked.", reply_markup=get_admin_keyboard())
             
     except ValueError:
         await update.message.reply_text("❌ Invalid input. Please use the correct format.", reply_markup=get_admin_keyboard())
@@ -1526,6 +2129,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
     
+    # Check if user is banned
+    if is_user_banned(user_id):
+        # Send banned message with image
+        try:
+            await update.message.reply_photo(
+                photo=BANNED_IMAGE_URL,
+                caption="🚫 You are banned due to Violation of our terms and conditions"
+            )
+        except:
+            await update.message.reply_text("🚫 You are banned due to Violation of our terms and conditions")
+        return
+    
     # Clear any existing states
     context.user_data.pop('pagination', None)
     context.user_data.pop('in_search_mode', None)
@@ -1571,7 +2186,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 log_audit_event(user_id, "REFERRAL_JOIN", f"Referred by: {referred_by}")
             
             add_verification_record(user_id, True, "New user - initial credits granted")
-            message = "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 🎉🎊\n\n🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+            message = "🍒 verified successfully 🎉🎊\n\n🎁 received 2 free credit 💎\n\n🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
             
             await update.message.reply_photo(
                 photo=START_IMAGE_URL,
@@ -1584,15 +2199,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             add_verification_record(user_id, True, "Existing user - membership verified")
             await update.message.reply_photo(
                 photo=START_IMAGE_URL,
-                caption="🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ\n\n🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂",
+                caption="🎖️ welcome back \n\n🍷 enjoy bot🥂",
                 reply_markup=get_main_keyboard()
             )
     else:
         # User hasn't joined both channels, show join buttons
         keyboard = [
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("🟢 𝐕ᴇʀɪғʏ", callback_data="verify")]
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🟢 verify", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -1600,14 +2215,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_photo(
             photo=VERIFY_IMAGE_URL,
-            caption="───୨[𝍖 𝐙ᴀʀᴋᴏ 𓆗 𝐎ꜱɪɴᴛ 𝍖]ৎ───\n\n"
-            "🛡️ 𝐓𝐨 𝐔sᴇ 𝐓ʜɪs 𝐁ᴏᴛ 𝐘ᴏᴜ 𝐌ᴜsᴛ »\n\n"
-            "🔒 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐎ғғɪᴄɪᴀʟ 𝐂ʜᴀɴɴᴇʟ\n"
-            "🟢 𝐂ʟɪᴄᴋ 𝐎ɴ 𝐕ᴇʀɪғʏ\n\n"
-            "🎁 𝐑ᴇᴡᴀʀᴅ : ̗̀➛ 𝐀ғᴛᴇʀ 𝐒ᴜᴄᴄᴇss 𝐕ᴇʀɪғʏ 𝐘ᴏᴜ 𝐆ᴇᴛ 🍒\n"
-            "💶 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛs 💎\n\n"
+            caption="zarko bot\n\n"
+            "🛡️ use this bot \n\n"
+            "🔒 join channel\n"
+            "🟢 click on verify\n\n"
+            "🎁 reward - 2 credit \n"
+            "💶 free credit💎\n\n"
             "──── ୨୧ ──────── ୨୧ ──────── ୨୧ ──────── \n"
-            "♈ 𝐁ᴜʏ 𝐔ɴʟɪᴍɪᴛᴇᴅ 𝐂ʀᴇᴅɪᴛs 💎 & 𝐀𝐏𝐈 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @pvt_s1n",
+            "♈ buy unlimited credit and api contact @pvt_s1n",
             reply_markup=reply_markup
         )
 
@@ -1617,6 +2232,18 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_id = update.effective_user.id
     name = update.effective_user.first_name
+    
+    # Check if user is banned
+    if is_user_banned(user_id):
+        # Send banned message with image
+        try:
+            await query.message.reply_photo(
+                photo=BANNED_IMAGE_URL,
+                caption="🚫 You are banned due to Violation of our terms and conditions"
+            )
+        except:
+            await query.message.reply_text("🚫 You are banned due to Violation of our terms and conditions")
+        return
     
     # Check if user has joined both channels
     is_member = await check_membership(update, context, user_id)
@@ -1636,15 +2263,15 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Show success message
             try:
                 await query.message.edit_caption(
-                    caption="🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
-                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
-                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                    caption="🍒 🍒 verify successfull 🎉🎊\n\n"
+                    "🎁you received 2 credit 💎\n\n"
+                    "🍷 enjoy bot"
                 )
             except:
                 await query.message.reply_text(
-                    "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
-                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
-                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                    "🍒 verify successfull 🎉🎊\n\n"
+                    "🎁you received 2 credit 💎\n\n"
+                    "🍷 enjoy bot"
                 )
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
         else:
@@ -1657,15 +2284,15 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 try:
                     await query.message.edit_caption(
-                        caption="🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
-                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
-                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                        caption="🍒 verify successfull 🎉🎊\n\n"
+                    "🎁you received 2 credit 💎\n\n"
+                    "🍷 enjoy bot"
                     )
                 except:
                     await query.message.reply_text(
-                        "🍒 𝐕ᴇʀɪғɪCᴀᴛɪᴏɴ 𝐒ᴜᴄᴄᴇssFᴜʟ 🎉🎊\n\n"
-                    "🎁𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐑ᴇᴄᴇɪᴠᴇᴅ 2 𝐅ʀᴇᴇ 𝐂ʀᴇᴅɪᴛ 💎\n\n"
-                    "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                        "🍒 verify successfull 🎉🎊\n\n"
+                    "🎁you received 2 credit 💎\n\n"
+                    "🍷 enjoy bot"
                     )
             else:
                 # Already received credits, just update verification status
@@ -1675,13 +2302,13 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 try:
                     await query.message.edit_caption(
-                        caption="🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ\n\n"
-                        "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                        caption="🎖️ welcome bot\n\n"
+                        "🍷 enjoy bot"
                     )
                 except:
                     await query.message.reply_text(
-                        "🎖️ 𝐖ᴇʟᴄᴏᴍᴇ 𝐁ᴀᴄᴋ 𝐔sᴇʀ.\n\n"
-                        "🍷 𝐄ɴᴊᴏʏ 𝐓ʜᴇ 𝐏ᴏᴡᴇʀFᴜʟ 𝐎sɪɴᴛ 𝐁ᴏᴛ 🥂"
+                        "🎖️ welcome bot\n\n"
+                        "🍷 enjoy bot"
                     )
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
     else:
@@ -1689,28 +2316,28 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         add_verification_record(user_id, False, "Verification failed - not member of channels")
         
         keyboard = [
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
-            [InlineKeyboardButton("🎲 𝐉ᴏɪɴ", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
-            [InlineKeyboardButton("🔄 𝐑ᴇᴛʀʏ", callback_data="verify")]
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
+            [InlineKeyboardButton("🎲 join", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
+            [InlineKeyboardButton("🔄 retry", callback_data="verify")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         try:
             await query.message.edit_caption(
-                caption="───୨[𝍖🚨 𝐖ᴀʀɴɪɴɢ 🚨𝍖]ৎ───\n\n"
-                "🛑 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐍ᴏᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐘ᴇᴛ\n\n"
-                "❌ 𝐏ʟᴇᴀsᴇ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐅ɪʀsᴛ »\n"
-                "🔄 𝐓ʜᴇɴ 𝐂ʟɪᴄᴋ 𝐑ᴇᴛʀʏ 🔄\n\n"
-                "﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌",
+                caption="warning 📍\n\n"
+                "🛑 you have not join channle\n\n"
+                "❌ please join both channel first\n"
+                "🔄 click retry 🔄\n\n"
+                "____________",
                 reply_markup=reply_markup
             )
         except:
             await query.message.reply_text(
-                "───୨[𝍖🚨 𝐖ᴀʀɴɪɴɢ 🚨𝍖]ৎ───\n\n"
-                "🛑 𝐘ᴏᴜ 𝐇ᴀᴠᴇ 𝐍ᴏᴛ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐘ᴇᴛ\n\n"
-                "❌ 𝐏ʟᴇᴀsᴇ 𝐉ᴏɪɴ 𝐁ᴏᴛʜ 𝐂ʜᴀɴɴᴇʟ 𝐅ɪʀsᴛ »\n"
-                "🔄 𝐓ʜᴇɴ 𝐂ʟɪᴄᴋ 𝐑ᴇᴛʀʏ 🔄\n\n"
-                "﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌",
+                "warning 📍\n\n"
+                "🛑 you have not join channle\n\n"
+                "❌ please join both channel first\n"
+                "🔄 click retry 🔄\n\n"
+                "____________",
                 reply_markup=reply_markup
             )
 
@@ -1720,44 +2347,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.data == "buy":
         buy_message = """
-──୨[𝍖🛍️ 𝐂ʀᴇᴅɪᴛ 𝐒ʜᴏᴘ 🛍️𝍖]ৎ──
-꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷꒦꒷꒦︶꒷꒦︶ ๋ ࣭ ⭑꒷
-
-1️⃣ Starter Pack 🔰 
-➤10 Credits → ₹25 
-🎁Bonus: +2 Free Credits 
-📈Best for small searches
-────────────────────
-
-2️⃣ Value Pack 🔒 
-➤25 Credits → ₹50 
-🎁Bonus: +5 Free Credits 
-📈Perfect for regular users
-────────────────────
-
-3️⃣ Super Saver Pack 🚀 
-➤50 Credits → ₹90 
-🎁Bonus: +15 Free Credits 
-📈More searches, less money
-────────────────────
-
-4️⃣ Pro Pack 🏆 
-➤75 Credits → ₹120 
-🎁Bonus: +25 Free Credits 
-📈Best for heavy users
-────────────────────
-
-5️⃣ Mega Pack 💎 
-➤100 Credits → ₹150 
-🎁Bonus: +40 Free Credits 
-📈Maximum value & savings
-﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌﹌
-🍒 𝐅ᴏʀ 𝐃ᴇᴠᴇʟᴏᴘᴇʀ 𝐏ʟᴀɴ »
-
-📲 𝐁ᴜʏ 𝐀𝐏𝐈 - 1 𝐌𝐎𝐍𝐓𝐇 - ₹399 🏅
-💳 𝐁ᴜʏ 𝐀𝐏𝐈 - 𝐋𝐈𝐅𝐄𝐓𝐈𝐌𝐄 - ₹1999 🎖️
-📞 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ 𝐅ᴏʀ 𝐌ᴏʀᴇ » @pvt_s1n
-──── ୨୧ ──────── ୨୧ ────
+buy anything 
+from 
+shop
+contact 
+owner @pvt_s1n
 """
         try:
             await query.edit_message_text(buy_message)
@@ -1781,10 +2375,39 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query.data.startswith("page_"):
         await handle_pagination(update, context)
+    
+    elif query.data.startswith("deposit_"):
+        await handle_deposit_callback(update, context)
+    
+    elif query.data.startswith("paid_"):
+        await handle_payment_confirmation(update, context)
+    
+    elif query.data.startswith("approve_") or query.data.startswith("reject_"):
+        await handle_payment_approval(update, context)
+    
+    elif query.data == "cancel_payment":
+        await handle_cancel_payment(update, context)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
+    
+    # Check if user is banned
+    if is_user_banned(user_id):
+        # Send banned message with image
+        try:
+            await update.message.reply_photo(
+                photo=BANNED_IMAGE_URL,
+                caption="🚫 You are banned due to Violation of our terms and conditions"
+            )
+        except:
+            await update.message.reply_text("🚫 You are banned due to Violation of our terms and conditions")
+        return
+    
+    # Check if admin is providing rejection reason
+    if 'rejecting_payment' in context.user_data and await is_admin(user_id):
+        await handle_rejection_reason(update, context)
+        return
     
     # Clear any existing pagination data
     if 'pagination' in context.user_data:
@@ -1792,14 +2415,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Define user menu buttons
     user_menu_buttons = [
-        "🔍 𝐒ᴇᴀʀᴄʜ",
-        "💎 𝐂ʀᴇᴅɪᴛs",
-        "🎁 𝐆ɪғᴛ",
-        "🎖️ 𝐏ʀᴏғɪʟᴇ",
-        "🛍️ 𝐒ʜᴏᴘ",
-        "💠 𝐑ᴇғᴇʀ",
-        "☎️ 𝐇ᴇʟᴘ",
-        "🧧 𝐀ᴅᴍɪɴ"
+        "🔍 search",
+        "💎 credits",
+        "🎁 gift",
+        "🎖️ profile",
+        "🛍️ shop",
+        "💠 refer",
+        "💳 deposit",
+        "☎️ help",
+        "🧧 admin"
     ]
     
     # Check if we're waiting for a gift code
@@ -1825,7 +2449,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_admin_user and admin_mode:
         # Handle admin panel actions
-        if text in ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]:
+        if text in ["🃏 add credits", "💶 set credits", "🏅 user info", "📮 broadcast", "🎁 generate gift", "📑 referral", "⛔ ban user", "🔓 unban user", "🔒 lock search", "🔓 unlock search", "📊 stats", "🎲 main menu"]:
             await handle_admin_panel(update, context)
             return
         elif 'admin_action' in context.user_data:
@@ -1838,6 +2462,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Check if we're in search mode
     if context.user_data.get('in_search_mode', False):
+        # Check if the search type is locked
+        is_locked, lock_message = check_search_type_locked(text)
+        
+        if is_locked:
+            await update.message.reply_text(f"🔒 {lock_message}\n\nPlease try other search options.")
+            context.user_data['in_search_mode'] = False
+            return
+        
         # Clear search mode first
         context.user_data['in_search_mode'] = False
         await search(update, context)
@@ -1848,7 +2480,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Handle menu buttons for all users
-    if text == "🔍 𝐒ᴇᴀʀᴄʜ":
+    if text == "🔍 search":
         # Set search mode and prompt user
         context.user_data['in_search_mode'] = True
         # Send as photo with caption
@@ -1856,23 +2488,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             photo=SEARCH_IMAGE_URL, 
             caption=SEARCH_PROMPT_TEXT
         )
-    elif text == "💎 𝐂ʀᴇᴅɪᴛs":
+    elif text == "💎 credits":
         await credits(update, context)
-    elif text == "🎁 𝐆ɪғᴛ":
+    elif text == "🎁 gift":
         await gift_code_command(update, context)
-    elif text == "🎖️ 𝐏ʀᴏғɪʟᴇ":
+    elif text == "🎖️ profile":
         await me(update, context)
-    elif text == "🛍️ 𝐒ʜᴏᴘ":
+    elif text == "🛍️ shop":
         await buy_command(update, context)
-    elif text == "💠 𝐑ᴇғᴇʀ":
+    elif text == "💠 refer":
         await show_referral_info(update, context)
-    elif text == "☎️ 𝐇ᴇʟᴘ":
+    elif text == "💳 deposit":
+        await deposit_command(update, context)
+    elif text == "☎️ help":
         # Send as photo with caption
         await update.message.reply_photo(
             photo=HELP_IMAGE_URL, 
             caption=HELP_TEXT
         )
-    elif text == "🧧 𝐀ᴅᴍɪɴ":
+    elif text == "🧧 admin":
         await admin_stats(update, context)
     else:
         # If it's not a menu command, show help
@@ -1938,7 +2572,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Add credits info to each page
     credits_left = users[str(user_id)]["credits"]
     for i in range(len(pages)):
-        pages[i] += f"\n💶 𝐂ʀᴇᴅɪᴛ 𝐋ᴇғᴛ : ̗̀➛ {credits_left} 💎"
+        pages[i] += f"\n💶 credit left -  {credits_left} 💎"
     
     # Store pagination data in context
     context.user_data['pagination'] = {
@@ -1966,7 +2600,7 @@ async def credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send as photo with caption
     await update.message.reply_photo(
         photo=CREDITS_IMAGE_URL, 
-        caption=f"💶 𝐘ᴏᴜʀ 𝐂ʀᴇᴅɪᴛ : ̗̀➛ {c} 💎"
+        caption=f"💶 your credit - {c} 💎"
     )
 
 async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1995,13 +2629,32 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_referrals = sum(user.get("referrals", 0) for user in users.values())
     total_referral_credits = sum(user.get("referral_credits", 0) for user in users.values())
     
+    # Load banned users
+    banned_users = load_banned_users()
+    total_banned = len(banned_users)
+    
+    # Load search locks
+    locks = load_search_locks()
+    
+    # Load pending payments
+    payments = load_pending_payments()
+    pending_payments = sum(1 for p in payments.values() if p.get("status") == "pending")
+    
     stats_msg = f"""
 📊 [ADMIN PANEL] 📊
 
 👥 Total Users ➜ {total_users}
+⛔ Banned Users ➜ {total_banned}
 🪙 Total Credits ➜ {total_credits}
 🤝 Total Referrals ➜ {total_referrals}
 🎁 Total Referral Credits ➜ {total_referral_credits}
+💰 Pending Payments ➜ {pending_payments}
+
+🔒 Search Locks:
+  • Number: {'🔒' if locks.get('number', False) else '🔓'}
+  • Email: {'🔒' if locks.get('email', False) else '🔓'}
+  • Name: {'🔒' if locks.get('name', False) else '🔓'}
+
 🔄 Updated ➜ {datetime.now().strftime('%d/%m - %I:%M %p')}
 
 """
@@ -2035,16 +2688,16 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(CommandHandler("gengift", generate_gift_command))
     app.add_handler(CommandHandler("referralstats", referral_stats_command))
+    app.add_handler(CommandHandler("ban", ban_user_command))
+    app.add_handler(CommandHandler("unban", unban_user_command))
+    app.add_handler(CommandHandler("lock", lock_search_command))
+    app.add_handler(CommandHandler("unlock", unlock_search_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_)"))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_|deposit_|paid_|approve_|reject_|cancel_payment)"))
     
-    print("⚡𝍖Ｚᴀʀᴋᴏ 𓆗 Ｏꜱɪɴᴛ 𝍖 ➣➣➣")
+    print("bot is starting...")
     app.run_polling()
 
 if __name__ == "__main__":
-
     main()
-
-
-
