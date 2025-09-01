@@ -72,7 +72,7 @@ ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
 BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"  # Replace with your banned image URL
-DEPOSIT_IMAGE_URL = "https://files.catbox.moe/deposit_image.jpg"  # Replace with your deposit image URL
+DEPOSIT_IMAGE_URL = "https://files.catbox.moe/dko70i.png"  # Replace with your deposit image URL
 
 # Payment packages (amount in INR : credits)
 PAYMENT_PACKAGES = {
@@ -2700,4 +2700,5 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
+
     main()
