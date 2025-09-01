@@ -71,8 +71,8 @@ VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
-BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"  # Replace with your banned image URL
-DEPOSIT_IMAGE_URL = "https://files.catbox.moe/dko70i.png"  # Replace with your deposit image URL
+BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
+DEPOSIT_IMAGE_URL = "https://files.catbox.moe/dko70i.png"
 
 # Payment packages (amount in INR : credits)
 PAYMENT_PACKAGES = {
@@ -914,6 +914,7 @@ async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Clear any existing states
     context.user_data.pop('in_search_mode', None)
     context.user_data.pop('admin_action', None)
+    context.user_data.pop('admin_mode', None)
     
     # Set state to wait for gift code
     context.user_data['waiting_for_gift_code'] = True
@@ -1485,12 +1486,18 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await force_membership_check(update, context):
         return
     
+    # Clear any existing states
+    context.user_data.pop('in_search_mode', None)
+    context.user_data.pop('waiting_for_gift_code', None)
+    context.user_data.pop('admin_action', None)
+    context.user_data.pop('admin_mode', None)
+    
     # Create inline keyboard for payment packages
     keyboard = []
     for amount, credits in PAYMENT_PACKAGES.items():
         keyboard.append([InlineKeyboardButton(f"₹{amount} - {credits} 💎", callback_data=f"deposit_{amount}")])
     
-    keyboard.append([InlineKeyboardButton("☎️ Contact Owner", url=f"https://t.me/{OWNER_USERNAME[1:]}")])
+    keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_main")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -1523,6 +1530,24 @@ async def handle_deposit_callback(update: Update, context: ContextTypes.DEFAULT_
     user_id = update.effective_user.id
     data = query.data
     
+    if data == "back_to_main":
+        # Clear any states and return to main menu
+        context.user_data.pop('in_search_mode', None)
+        context.user_data.pop('waiting_for_gift_code', None)
+        context.user_data.pop('admin_action', None)
+        context.user_data.pop('admin_mode', None)
+        
+        await query.message.edit_caption(
+            caption="🔙 Returning to main menu",
+            reply_markup=None
+        )
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="Choose an option:",
+            reply_markup=get_main_keyboard()
+        )
+        return
+    
     if not data.startswith("deposit_"):
         return
     
@@ -1546,210 +1571,24 @@ async def handle_deposit_callback(update: Update, context: ContextTypes.DEFAULT_
 Amount: ₹{amount}
 Credits: {credits} 💎
 UPI ID: {UPI_ID}
+Payment ID: {payment_id}
 
-Please scan the QR code or send payment to the UPI ID above.
+Please scan the QR code and send payment to the UPI ID above.
 
-After payment, click "I've Paid" below.
+After payment, send screenshot to {OWNER_USERNAME} for verification.
 """
-    
-    # Create inline keyboard
-    keyboard = [
-        [InlineKeyboardButton("📱 Pay Now", url=f"upi://pay?pa={UPI_ID}&pn=Bot Owner&am={amount}&cu=INR")],
-        [InlineKeyboardButton("✅ I've Paid", callback_data=f"paid_{payment_id}")],
-        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_payment")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Send message with QR code
     await query.message.reply_photo(
         photo=qr_buffer,
-        caption=payment_msg,
-        reply_markup=reply_markup
+        caption=payment_msg
     )
     
     # Edit original message to show payment initiated
-    await query.edit_message_caption(caption="Payment initiated. Please check the message below for payment details.")
-
-async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle payment confirmation from user"""
-    query = update.callback_query
-    await query.answer()
-    
-    user_id = update.effective_user.id
-    data = query.data
-    
-    if not data.startswith("paid_"):
-        return
-    
-    payment_id = data.split("_")[1]
-    
-    # Load payment details
-    payments = load_pending_payments()
-    payment = payments.get(payment_id)
-    
-    if not payment:
-        await query.edit_message_text("❌ Payment not found. Please contact admin.")
-        return
-    
-    if payment["user_id"] != user_id:
-        await query.edit_message_text("❌ This payment doesn't belong to you.")
-        return
-    
-    if payment["status"] != "pending":
-        await query.edit_message_text(f"❌ Payment already {payment['status']}.")
-        return
-    
-    # Notify admin
-    admin_msg = f"""
-💰 Payment Verification Request
-
-User: {payment['user_name']} (ID: {user_id})
-Amount: ₹{payment['amount']}
-Credits: {payment['credits']} 💎
-Payment ID: {payment_id}
-
-Please verify the payment and take action.
-"""
-    
-    # Create inline keyboard for admin
-    admin_keyboard = [
-        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{payment_id}")],
-        [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{payment_id}")]
-    ]
-    admin_reply_markup = InlineKeyboardMarkup(admin_keyboard)
-    
-    # Send notification to admin
-    await context.bot.send_message(
-        chat_id=ADMIN_ID,
-        text=admin_msg,
-        reply_markup=admin_reply_markup
-    )
-    
-    # Update user message
     await query.edit_message_caption(
-        caption="Payment verification request sent to admin. Please wait for approval."
+        caption=f"Payment initiated for ₹{amount}. Check the QR code below.",
+        reply_markup=None
     )
-    
-    log_audit_event(user_id, "PAYMENT_REQUEST", f"Amount: {payment['amount']}, Credits: {payment['credits']}")
-
-async def handle_payment_approval(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle payment approval/rejection by admin"""
-    query = update.callback_query
-    await query.answer()
-    
-    admin_id = update.effective_user.id
-    if not await is_admin(admin_id):
-        await query.edit_message_text("❌ Admin Only")
-        return
-    
-    data = query.data
-    
-    if not (data.startswith("approve_") or data.startswith("reject_")):
-        return
-    
-    action = "approve" if data.startswith("approve_") else "reject"
-    payment_id = data.split("_")[1]
-    
-    # Load payment details
-    payments = load_pending_payments()
-    payment = payments.get(payment_id)
-    
-    if not payment:
-        await query.edit_message_text("❌ Payment not found.")
-        return
-    
-    if payment["status"] != "pending":
-        await query.edit_message_text(f"❌ Payment already {payment['status']}.")
-        return
-    
-    user_id = payment["user_id"]
-    
-    if action == "approve":
-        # Add credits to user
-        users = load_users()
-        uid = str(user_id)
-        
-        if uid not in users:
-            await query.edit_message_text("❌ User not found.")
-            return
-        
-        users[uid]["credits"] += payment["credits"]
-        users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
-        save_users(users)
-        
-        # Update payment status
-        update_payment_status(payment_id, "approved", admin_id)
-        
-        # Notify user
-        user_msg = f"""
-✅ Payment Approved
-
-Your payment of ₹{payment['amount']} has been approved.
-
-🎉 You received {payment['credits']} 💎
-💰 New balance: {users[uid]['credits']} 💎
-"""
-        
-        await context.bot.send_message(chat_id=user_id, text=user_msg)
-        
-        # Update admin message
-        await query.edit_message_text(f"✅ Payment approved. User {user_id} received {payment['credits']} credits.")
-        
-        log_audit_event(admin_id, "PAYMENT_APPROVED", f"User: {user_id}, Amount: {payment['amount']}, Credits: {payment['credits']}")
-    
-    else:
-        # Reject payment
-        # Ask admin for reason
-        context.user_data['rejecting_payment'] = payment_id
-        await query.edit_message_text("Please provide a reason for rejection:")
-        
-        log_audit_event(admin_id, "PAYMENT_REJECTED", f"User: {user_id}, Amount: {payment['amount']}")
-
-async def handle_rejection_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle rejection reason from admin"""
-    admin_id = update.effective_user.id
-    if not await is_admin(admin_id):
-        await update.message.reply_text("❌ Admin Only")
-        return
-    
-    if 'rejecting_payment' not in context.user_data:
-        return
-    
-    payment_id = context.user_data['rejecting_payment']
-    reason = update.message.text
-    
-    # Load payment details
-    payments = load_pending_payments()
-    payment = payments.get(payment_id)
-    
-    if not payment:
-        await update.message.reply_text("❌ Payment not found.")
-        return
-    
-    user_id = payment["user_id"]
-    
-    # Update payment status
-    update_payment_status(payment_id, "rejected", admin_id, reason)
-    
-    # Notify user
-    user_msg = f"""
-❌ Payment Rejected
-
-Your payment of ₹{payment['amount']} has been rejected.
-
-Reason: {reason}
-
-Please contact admin if you think this is a mistake.
-"""
-    
-    await context.bot.send_message(chat_id=user_id, text=user_msg)
-    
-    # Clear the state
-    del context.user_data['rejecting_payment']
-    
-    await update.message.reply_text("✅ Payment rejected. User has been notified.")
-    
-    log_audit_event(admin_id, "PAYMENT_REJECTED", f"User: {user_id}, Amount: {payment['amount']}, Reason: {reason}")
 
 async def handle_cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle payment cancellation"""
@@ -1767,6 +1606,13 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("❌ Admin Only.")
         return
         
+    # Clear any existing states
+    context.user_data.pop('in_search_mode', None)
+    context.user_data.pop('waiting_for_gift_code', None)
+    
+    # Set admin mode
+    context.user_data['admin_mode'] = True
+    
     text = update.message.text
     
     if text == "🃏 add credits":
@@ -1813,9 +1659,8 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         
     elif text == "🎲 main menu":
         # Clear admin mode and action
-        context.user_data['admin_mode'] = False
-        if 'admin_action' in context.user_data:
-            del context.user_data['admin_action']
+        context.user_data.pop('admin_mode', None)
+        context.user_data.pop('admin_action', None)
         await update.message.reply_text("🔙 Returning to main menu", reply_markup=get_main_keyboard())
 
 async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2365,6 +2210,12 @@ owner @pvt_s1n
         await show_profile(update, context, user_id, user_data, edit_message=True)
     
     elif query.data == "back_to_main":
+        # Clear all states and return to main menu
+        context.user_data.pop('in_search_mode', None)
+        context.user_data.pop('waiting_for_gift_code', None)
+        context.user_data.pop('admin_action', None)
+        context.user_data.pop('admin_mode', None)
+        
         await query.edit_message_text("choose an option:", reply_markup=get_main_keyboard())
     
     elif query.data.startswith("full_referral_list_"):
@@ -2378,12 +2229,6 @@ owner @pvt_s1n
     
     elif query.data.startswith("deposit_"):
         await handle_deposit_callback(update, context)
-    
-    elif query.data.startswith("paid_"):
-        await handle_payment_confirmation(update, context)
-    
-    elif query.data.startswith("approve_") or query.data.startswith("reject_"):
-        await handle_payment_approval(update, context)
     
     elif query.data == "cancel_payment":
         await handle_cancel_payment(update, context)
@@ -2483,6 +2328,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if text == "🔍 search":
         # Set search mode and prompt user
         context.user_data['in_search_mode'] = True
+        # Clear other states
+        context.user_data.pop('waiting_for_gift_code', None)
+        context.user_data.pop('admin_action', None)
+        context.user_data.pop('admin_mode', None)
+        
         # Send as photo with caption
         await update.message.reply_photo(
             photo=SEARCH_IMAGE_URL, 
@@ -2694,12 +2544,10 @@ def main():
     app.add_handler(CommandHandler("unlock", unlock_search_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_|deposit_|paid_|approve_|reject_|cancel_payment)"))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_|deposit_|cancel_payment)"))
     
     print("bot is starting...")
     app.run_polling()
 
 if __name__ == "__main__":
-
     main()
-
