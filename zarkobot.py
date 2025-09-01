@@ -71,7 +71,7 @@ VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
-BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"  # Replace with your banned image URL
+BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"  # Replace with your banned image URL
 DEPOSIT_IMAGE_URL = "https://files.catbox.moe/dko70i.png"  # Replace with your deposit image URL
 
 # Payment packages (amount in INR : credits)
@@ -2702,3 +2702,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
