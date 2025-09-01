@@ -1,7 +1,7 @@
-python-telegram-bot==20.7
-requests==2.31.0
-firebase-admin==6.2.0
-Flask==2.3.3
-qrcode==7.4.2
-pillow==10.2.0
+python-telegram-bot
+firebase-admin
+requests
+Flask
+qrcode
+Pillow
 cryptography==41.0.7
