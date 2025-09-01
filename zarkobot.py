@@ -71,7 +71,7 @@ REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
 BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"
 LOCKED_IMAGE_URL = "https://files.catbox.moe/example_locked.jpg"
-PAYMENT_IMAGE_URL = "https://files.catbox.moe/example_payment.jpg"
+PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -2524,4 +2524,5 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
+
     main()
