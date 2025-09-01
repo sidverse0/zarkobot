@@ -7,6 +7,8 @@ import random
 import string
 import re
 import os
+import qrcode
+import io
 from datetime import datetime, timedelta
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
@@ -36,7 +38,6 @@ def run_flask():
 Thread(target=run_flask, daemon=True).start()
 
 # ==== Firebase Initialization ====
-# Initialize Firebase with environment variable
 try:
     firebase_cred = credentials.Certificate(json.loads(os.environ['FIREBASE_CREDENTIALS']))
     firebase_admin.initialize_app(firebase_cred)
@@ -44,15 +45,15 @@ try:
     print("Firebase initialized successfully")
 except Exception as e:
     print(f"Firebase initialization error: {e}")
-    # Fallback to local storage if Firebase fails
     db = None
 
 # ==== CONFIG ====
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8116705267:AAGVx7azJJMndrXHwzoMnx7angKd0COJWjg")
-CHANNEL_USERNAME = "@zarkoworld"   # Main channel
-CHANNEL_USERNAME_2 = "@chandhackz_78"  # Second channel
-OWNER_USERNAME = "@pvt_s1n"    # Your username
-ADMIN_ID = 7975903577  # Your user ID
+CHANNEL_USERNAME = "@zarkoworld"
+CHANNEL_USERNAME_2 = "@chandhackz_78"
+OWNER_USERNAME = "@pvt_s1n"
+ADMIN_ID = 7975903577
+UPI_ID = "reyazmbi2003@okaxis"
 
 LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8250754854:64fCZifF")
 API_URL = "https://leakosintapi.com/"
@@ -68,8 +69,11 @@ VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
+BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"
+LOCKED_IMAGE_URL = "https://files.catbox.moe/example_locked.jpg"
+PAYMENT_IMAGE_URL = "https://files.catbox.moe/example_payment.jpg"
 
-# Constants for messages (normalized text)
+# Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
 
 ☞📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
@@ -99,6 +103,18 @@ SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
 ➛ 𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
 """
 
+# Payment packages
+PAYMENT_PACKAGES = {
+    "10": {"credits": 100, "amount": 10},
+    "20": {"credits": 200, "amount": 20},
+    "30": {"credits": 300, "amount": 30},
+    "40": {"credits": 400, "amount": 40},
+    "50": {"credits": 500, "amount": 50},
+    "100": {"credits": 1000, "amount": 100},
+    "200": {"credits": 2000, "amount": 200},
+    "500": {"credits": 5000, "amount": 500}
+}
+
 # ==== Firebase Data Functions ====
 def load_users():
     if db is None:
@@ -123,6 +139,73 @@ def save_users(users):
     except Exception as e:
         print(f"Error saving users to Firebase: {e}")
 
+def load_banned_users():
+    if db is None:
+        return {}
+    try:
+        banned_ref = db.collection('banned_users')
+        docs = banned_ref.stream()
+        banned_users = {}
+        for doc in docs:
+            banned_users[doc.id] = doc.to_dict()
+        return banned_users
+    except Exception as e:
+        print(f"Error loading banned users from Firebase: {e}")
+        return {}
+
+def save_banned_users(banned_users):
+    if db is None:
+        return
+    try:
+        for user_id, ban_data in banned_users.items():
+            db.collection('banned_users').document(str(user_id)).set(ban_data)
+    except Exception as e:
+        print(f"Error saving banned users to Firebase: {e}")
+
+def load_locked_features():
+    if db is None:
+        return {"phone": False, "email": False, "name": False}
+    try:
+        locked_ref = db.collection('settings').document('locked_features')
+        doc = locked_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        return {"phone": False, "email": False, "name": False}
+    except Exception as e:
+        print(f"Error loading locked features from Firebase: {e}")
+        return {"phone": False, "email": False, "name": False}
+
+def save_locked_features(locked_features):
+    if db is None:
+        return
+    try:
+        db.collection('settings').document('locked_features').set(locked_features)
+    except Exception as e:
+        print(f"Error saving locked features to Firebase: {e}")
+
+def load_payment_requests():
+    if db is None:
+        return {}
+    try:
+        requests_ref = db.collection('payment_requests')
+        docs = requests_ref.stream()
+        payment_requests = {}
+        for doc in docs:
+            payment_requests[doc.id] = doc.to_dict()
+        return payment_requests
+    except Exception as e:
+        print(f"Error loading payment requests from Firebase: {e}")
+        return {}
+
+def save_payment_requests(payment_requests):
+    if db is None:
+        return
+    try:
+        for req_id, req_data in payment_requests.items():
+            db.collection('payment_requests').document(req_id).set(req_data)
+    except Exception as e:
+        print(f"Error saving payment requests to Firebase: {e}")
+
 def update_user(user_id, credits=None, name=None, last_verified=None, initial_credits_given=None, referred_by=None):
     users = load_users()
     uid = str(user_id)
@@ -142,7 +225,9 @@ def update_user(user_id, credits=None, name=None, last_verified=None, initial_cr
             "verification_history": [],
             "last_verified": None,
             "last_verification_check": None,
-            "claimed_gift_codes": []
+            "claimed_gift_codes": [],
+            "banned": False,
+            "ban_reason": None
         }
     
     if credits is not None:
@@ -159,7 +244,6 @@ def update_user(user_id, credits=None, name=None, last_verified=None, initial_cr
     users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
     save_users(users)
     
-    # Log the update
     log_audit_event(user_id, "USER_UPDATE", f"Credits: {users[uid]['credits']}, Name: {users[uid]['name']}")
     
     return users[uid]
@@ -186,7 +270,6 @@ def save_gift_codes(gift_codes):
         print(f"Error saving gift codes to Firebase: {e}")
 
 def log_audit_event(user_id, event_type, details):
-    """Log security events for monitoring"""
     timestamp = datetime.now().isoformat()
     user_hash = generate_user_hash(user_id)
     
@@ -202,7 +285,6 @@ def log_audit_event(user_id, event_type, details):
         if db is not None:
             db.collection('audit_logs').add(log_entry)
         else:
-            # Fallback to local file if Firebase not available
             with open("audit.log", "a", encoding="utf-8") as f:
                 f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
     except Exception as e:
@@ -221,21 +303,23 @@ def get_admin_keyboard():
     keyboard = [
         ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ"],
         ["📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs"],
-        ["📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
+        ["🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ"],
+        ["💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Admin Panel")
 
+def get_banned_keyboard():
+    keyboard = [["☎️ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ"]]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
 # ==== Gift Code Functions ====
 def generate_gift_code(length=12):
-    """Generate a random gift code"""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
 def create_gift_code(amount, name, created_by):
-    """Create a new gift code"""
     gift_codes = load_gift_codes()
     
-    # Generate a unique code
     while True:
         code = generate_gift_code()
         if code not in gift_codes:
@@ -254,7 +338,6 @@ def create_gift_code(amount, name, created_by):
     return code
 
 def claim_gift_code(code, user_id, user_name):
-    """Claim a gift code for a user"""
     gift_codes = load_gift_codes()
     
     if code not in gift_codes:
@@ -265,7 +348,6 @@ def claim_gift_code(code, user_id, user_name):
     if gift["claimed_by"] is not None:
         return False, "Gift code already claimed"
     
-    # Mark as claimed
     gift["claimed_by"] = user_id
     gift["claimed_by_name"] = user_name
     gift["claimed_at"] = datetime.now().isoformat()
@@ -275,76 +357,49 @@ def claim_gift_code(code, user_id, user_name):
 
 # ==== Phone Number Normalization Function ====
 def normalize_phone_number(query):
-    """
-    Normalize phone numbers to the format expected by the API (91XXXXXXXXXX)
-    Supports various formats: 10-digit, with spaces, with +91, with 91, etc.
-    """
-    # Remove all non-digit characters except '+' if present
     cleaned = re.sub(r'[^\d+]', '', query)
     
-    # Check if it's a phone number (contains only digits or starts with + followed by digits)
     if re.fullmatch(r'[\d+]+', cleaned):
-        # Remove any '+' signs
         digits_only = re.sub(r'[^\d]', '', cleaned)
         
-        # Handle different cases
         if len(digits_only) == 10:
-            # 10-digit number without country code
             return "91" + digits_only
         elif len(digits_only) == 11 and digits_only.startswith('0'):
-            # 11-digit number starting with 0 (common in some formats)
             return "91" + digits_only[1:]
         elif len(digits_only) == 12 and digits_only.startswith('91'):
-            # 12-digit number with country code
             return digits_only
         elif len(digits_only) > 12:
-            # Longer numbers - take first 12 digits
             return digits_only[:12]
         else:
-            # Return as is for other cases (let API handle it)
             return digits_only
     else:
-        # Not a phone number, return original query (for email/name searches)
         return query
 
 # ==== Query Optimization Functions ====
 def optimize_name_query(name):
-    """
-    Optimize name queries for better search results
-    """
-    # Remove extra spaces and special characters
     name = re.sub(r'[^\w\s]', '', name.strip())
     
-    # Split into words and take first 2-3 words for better matching
     words = name.split()
     if len(words) > 3:
         return " ".join(words[:3])
     return name
 
 def optimize_email_query(email):
-    """
-    Optimize email queries for better search results
-    """
-    # Clean email and extract username part for broader search
     email = email.strip().lower()
     return email
 
 # ==== Security Functions ====
 def generate_user_hash(user_id):
-    """Generate a 6-digit alphanumeric hash for user identification"""
-    # Create a consistent but unique 6-digit code for each user
-    random.seed(user_id)  # Seed with user_id for consistency
+    random.seed(user_id)
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(6))
 
 def generate_referral_code(user_id):
-    """Generate a unique referral code for each user"""
     random.seed(user_id)
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(8))
 
 def add_referral_credits(referrer_id):
-    """Add referral credits to referrer and update referral count"""
     users = load_users()
     ruid = str(referrer_id)
     
@@ -359,7 +414,6 @@ def add_referral_credits(referrer_id):
     return False
 
 def add_verification_record(user_id, success, details):
-    """Add a verification attempt to user's history"""
     users = load_users()
     uid = str(user_id)
     
@@ -377,24 +431,28 @@ def add_verification_record(user_id, success, details):
     
     users[uid]["verification_history"].append(record)
     
-    # Keep only last 10 records
     if len(users[uid]["verification_history"]) > 10:
         users[uid]["verification_history"] = users[uid]["verification_history"][-10:]
     
     save_users(users)
     return True
 
+# ==== Check if user is banned ====
+def is_user_banned(user_id):
+    banned_users = load_banned_users()
+    return str(user_id) in banned_users
+
 # ==== Check Channel Membership ====
 async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id):
     try:
-        # Check first channel
+        if is_user_banned(user_id):
+            return False
+            
         member1 = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
-        # Check second channel
         member2 = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME_2, user_id=user_id)
         
         is_member = member1.status != "left" and member2.status != "left"
         
-        # Log membership check
         log_audit_event(user_id, "MEMBERSHIP_CHECK", 
                        f"Channel1: {member1.status}, Channel2: {member2.status}, Result: {is_member}")
         
@@ -407,10 +465,21 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, u
 
 # ==== Force Membership Check ====
 async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Force user to join channels before using any feature"""
     user_id = update.effective_user.id
     
-    # Check membership
+    # Check if user is banned
+    if is_user_banned(user_id):
+        banned_users = load_banned_users()
+        ban_data = banned_users.get(str(user_id), {})
+        ban_reason = ban_data.get("reason", "No reason provided")
+        
+        await update.message.reply_photo(
+            photo=BANNED_IMAGE_URL,
+            caption=f"🚫 You have been banned from using this bot.\n\nReason: {ban_reason}\n\nContact owner for more information: {OWNER_USERNAME}",
+            reply_markup=get_banned_keyboard()
+        )
+        return False
+    
     is_member = await check_membership(update, context, user_id)
     
     if not is_member:
@@ -421,7 +490,6 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Check if it's a callback query or message
         if hasattr(update, 'callback_query') and update.callback_query:
             try:
                 await update.callback_query.message.reply_photo(
@@ -453,20 +521,16 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
 
 # ==== API Query ====
 def query_leakosint(query: str):
-    # First try the original query
     normalized_query = normalize_phone_number(query)
     
-    # Check if it's a name or email and optimize
-    if not re.match(r'^[\d+]+$', query):  # Not a phone number
-        if '@' in query:  # Email
+    if not re.match(r'^[\d+]+$', query):
+        if '@' in query:
             optimized_query = optimize_email_query(query)
-        else:  # Name
+        else:
             optimized_query = optimize_name_query(query)
         
-        # Try both original and optimized queries
         results = {}
         
-        # Try optimized query first
         payload = {
             "token": LEAKOSINT_API_TOKEN,
             "request": optimized_query,
@@ -480,7 +544,6 @@ def query_leakosint(query: str):
         except Exception as e:
             results["optimized"] = {"Error": str(e)}
         
-        # If optimized query is different from original, try original too
         if optimized_query != query:
             payload = {
                 "token": LEAKOSINT_API_TOKEN,
@@ -495,22 +558,18 @@ def query_leakosint(query: str):
             except Exception as e:
                 results["original"] = {"Error": str(e)}
             
-            # Combine results if both queries returned data
             if "List" in results.get("optimized", {}) and "List" in results.get("original", {}):
                 combined_result = {"List": {}}
                 
-                # Merge results from both queries
                 for source in ["optimized", "original"]:
                     for db, data in results[source].get("List", {}).items():
                         if db not in combined_result["List"]:
                             combined_result["List"][db] = data
                         else:
-                            # Merge data from same database
                             combined_result["List"][db]["Data"].extend(data["Data"])
                 
                 return combined_result
             
-            # Return whichever has data
             if "List" in results.get("optimized", {}):
                 return results["optimized"]
             elif "List" in results.get("original", {}):
@@ -521,7 +580,6 @@ def query_leakosint(query: str):
         return results.get("optimized", {})
     
     else:
-        # Phone number query - use standard approach
         payload = {
             "token": LEAKOSINT_API_TOKEN,
             "request": normalized_query,
@@ -543,7 +601,7 @@ def format_results(resp, max_length=4000):
     results = []
     current_result = ""
     results_count = 0
-    seen_entries = set()  # Track seen entries to avoid duplicates
+    seen_entries = set()
     
     for db, data in resp.get("List", {}).items():
         for row in data.get("Data", []):
@@ -560,15 +618,12 @@ def format_results(resp, max_length=4000):
             address = row.get("Address", "N/A")
             email = row.get("Email", "N/A")
             
-            # Create a unique identifier for this entry to check for duplicates
             entry_id = f"{name}|{father}|{mobile}|{doc}|{email}"
             
-            # Skip duplicate entries
             if entry_id in seen_entries:
                 continue
             seen_entries.add(entry_id)
             
-            # Skip empty results (all fields are N/A or empty)
             all_fields_empty = True
             for field in [name, father, mobile, alt1, alt2, alt3, alt4, alt5, doc, email]:
                 if field != "N/A" and field.strip() != "":
@@ -594,7 +649,6 @@ def format_results(resp, max_length=4000):
 ────────────────────
 """
             
-            # If adding this entry would exceed the max length, start a new message
             if len(current_result) + len(result_entry) > max_length:
                 if current_result:
                     results.append(current_result)
@@ -607,7 +661,6 @@ def format_results(resp, max_length=4000):
     if results_count == 0:
         return ["❌ No Data Available In Database 👉"]
     
-    # Add the last result if it exists
     if current_result:
         results.append(current_result)
     
@@ -628,7 +681,6 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
     join_date = user_data.get("join_date", "N/A")
     user_hash = user_data.get("user_hash", generate_user_hash(user_id))
     
-    # Format join date if needed
     if join_date != "N/A":
         try:
             dt = datetime.strptime(join_date, "%Y-%m-%d")
@@ -638,7 +690,6 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
     else:
         join_date_display = "N/A"
 
-    # Create profile message
     profile_msg = f"""
 👤 Name ➜ {name} 
 ────────────────────
@@ -657,7 +708,6 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
     if edit_message and hasattr(update, 'callback_query'):
         await update.callback_query.edit_message_text(profile_msg)
     elif hasattr(update, 'message'):
-        # Send as photo with caption
         await update.message.reply_photo(
             photo=PROFILE_IMAGE_URL, 
             caption=profile_msg
@@ -670,10 +720,8 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 
 # ==== Referral Function ====
 async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show referral information to user"""
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
         
@@ -689,7 +737,6 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
     referrals = user_data.get("referrals", 0)
     referral_credits = user_data.get("referral_credits", 0)
     
-    # Generate referral link
     bot_username = context.bot.username
     referral_link = f"https://t.me/{bot_username}?start={referral_code}"
     
@@ -718,103 +765,369 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
 Note: Fake referrals or self-referrals are strictly prohibited and will result in account ban.
 """
 
-    # Send as photo with caption
     await update.message.reply_photo(
         photo=REFER_IMAGE_URL, 
         caption=referral_msg
     )
 
+# ==== Generate QR Code Function ====
+def generate_qr_code(amount, upi_id=UPI_ID):
+    upi_url = f"upi://pay?pa={upi_id}&pn=Bot Owner&am={amount}&cu=INR"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(upi_url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    
+    return img_byte_arr
+
+# ==== Payment Request Functions ====
+def create_payment_request(user_id, amount, credits):
+    payment_requests = load_payment_requests()
+    
+    request_id = f"req_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    users = load_users()
+    user_name = users.get(str(user_id), {}).get("name", "Unknown")
+    
+    payment_requests[request_id] = {
+        "user_id": user_id,
+        "user_name": user_name,
+        "amount": amount,
+        "credits": credits,
+        "status": "pending",
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat()
+    }
+    
+    save_payment_requests(payment_requests)
+    return request_id
+
+def update_payment_request(request_id, status, admin_notes=None):
+    payment_requests = load_payment_requests()
+    
+    if request_id in payment_requests:
+        payment_requests[request_id]["status"] = status
+        payment_requests[request_id]["updated_at"] = datetime.now().isoformat()
+        
+        if admin_notes:
+            payment_requests[request_id]["admin_notes"] = admin_notes
+        
+        save_payment_requests(payment_requests)
+        return True
+    return False
+
 # ==== Buy Command Function ====
 async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
         
+    keyboard = []
+    row = []
+    
+    for i, (amount, details) in enumerate(PAYMENT_PACKAGES.items()):
+        row.append(InlineKeyboardButton(f"₹{amount} - {details['credits']}🪙", callback_data=f"buy_{amount}"))
+        
+        if (i + 1) % 2 == 0:
+            keyboard.append(row)
+            row = []
+    
+    if row:
+        keyboard.append(row)
+    
+    keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_main")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     buy_message = """
-💳 [ BUY MENU ] 💳
+💳 [ BUY CREDITS ] 💳
 ────────────────────
 
-1️⃣ Starter Pack 🔰 
-➤10 Credits → ₹25 
-🎁Bonus: +2 Free Credits 
-📈Best for small searches
-────────────────────
+Choose a payment package:
 
-2️⃣ Value Pack 🔒 
-➤25 Credits → ₹50 
-🎁Bonus: +5 Free Credits 
-📈Perfect for regular users
-────────────────────
+💰 Payment Options:
+- 10 Rs = 100 Credits
+- 20 Rs = 200 Credits
+- 30 Rs = 300 Credits
+- 40 Rs = 400 Credits
+- 50 Rs = 500 Credits
+- 100 Rs = 1000 Credits
+- 200 Rs = 2000 Credits
+- 500 Rs = 5000 Credits
 
-3️⃣ Super Saver Pack 🚀 
-➤50 Credits → ₹90 
-🎁Bonus: +15 Free Credits 
-📈More searches, less money
-────────────────────
+📝 How to purchase:
+1. Select a package
+2. Pay via UPI using the QR code
+3. Click "I've Paid" after payment
+4. Wait for admin approval
 
-4️⃣ Pro Pack 🏆 
-➤75 Credits → ₹120 
-🎁Bonus: +25 Free Credits 
-📈Best for heavy users
 ────────────────────
-
-5️⃣ Mega Pack 💎 
-➤100 Credits → ₹150 
-🎁Bonus: +40 Free Credits 
-📈Maximum value & savings
-────────────────────
-
-💰 Different Payment Methods 💰
-────────────────────
-
-📲 UPI Payment - 1 Month - ₹399💰
-💳 UPI Payment - Lifetime - ₹1999💰
-📞 Contact Owner For More Prices : @pvt_s1n
+Note: Payments are manually verified by admin. Please be patient.
 """
 
-    # Send as photo with caption
     await update.message.reply_photo(
         photo=BUY_IMAGE_URL, 
-        caption=buy_message
+        caption=buy_message,
+        reply_markup=reply_markup
     )
 
-# ==== Gift Code Function ====
-async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle gift code button press"""
+# ==== Handle Buy Package Selection ====
+async def handle_buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
     
-    # Clear any existing states
+    amount = query.data.split("_")[1]
+    
+    if amount not in PAYMENT_PACKAGES:
+        await query.edit_message_text("❌ Invalid package selected.")
+        return
+    
+    package = PAYMENT_PACKAGES[amount]
+    
+    # Generate QR code
+    qr_img = generate_qr_code(package["amount"])
+    
+    # Create payment request
+    request_id = create_payment_request(user_id, package["amount"], package["credits"])
+    
+    keyboard = [
+        [InlineKeyboardButton("✅ I've Paid", callback_data=f"paid_{request_id}")],
+        [InlineKeyboardButton("📞 Contact Owner", url=f"https://t.me/{OWNER_USERNAME[1:]}")],
+        [InlineKeyboardButton("🔙 Back to Packages", callback_data="back_to_packages")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    caption = f"""
+💳 Payment Details:
+────────────────────
+Amount: ₹{package['amount']}
+Credits: {package['credits']} 🪙
+UPI ID: {UPI_ID}
+Request ID: {request_id}
+
+📸 Scan the QR code to pay or send money directly to the UPI ID.
+
+After payment, click "I've Paid" to notify admin.
+"""
+
+    await query.message.reply_photo(
+        photo=qr_img,
+        caption=caption,
+        reply_markup=reply_markup
+    )
+
+# ==== Handle Payment Confirmation ====
+async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    request_id = query.data.split("_")[1]
+    
+    payment_requests = load_payment_requests()
+    
+    if request_id not in payment_requests:
+        await query.edit_message_text("❌ Payment request not found.")
+        return
+    
+    payment_request = payment_requests[request_id]
+    
+    if payment_request["user_id"] != user_id:
+        await query.edit_message_text("❌ This is not your payment request.")
+        return
+    
+    # Update payment request status to under review
+    update_payment_request(request_id, "under_review")
+    
+    # Notify admin
+    admin_message = f"""
+💰 New Payment Request:
+────────────────────
+User: {payment_request['user_name']} (ID: {user_id})
+Amount: ₹{payment_request['amount']}
+Credits: {payment_request['credits']} 🪙
+Request ID: {request_id}
+Status: Under Review
+
+Click below to approve or reject:
+"""
+    
+    keyboard = [
+        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{request_id}"),
+         InlineKeyboardButton("❌ Reject", callback_data=f"reject_{request_id}")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=admin_message,
+            reply_markup=reply_markup
+        )
+    except Exception as e:
+        print(f"Error notifying admin: {e}")
+    
+    await query.edit_message_text("✅ Payment confirmation received. Admin will review your payment shortly.")
+
+# ==== Handle Admin Payment Approval ====
+async def handle_admin_payment_approval(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    
+    if not await is_admin(user_id):
+        await query.edit_message_text("❌ Admin only.")
+        return
+    
+    action, request_id = query.data.split("_")
+    
+    payment_requests = load_payment_requests()
+    
+    if request_id not in payment_requests:
+        await query.edit_message_text("❌ Payment request not found.")
+        return
+    
+    payment_request = payment_requests[request_id]
+    target_user_id = payment_request["user_id"]
+    
+    if action == "approve":
+        # Add credits to user
+        users = load_users()
+        uid = str(target_user_id)
+        
+        if uid not in users:
+            await query.edit_message_text("❌ User not found.")
+            return
+        
+        users[uid]["credits"] += payment_request["credits"]
+        save_users(users)
+        
+        # Update payment request status
+        update_payment_request(request_id, "approved")
+        
+        # Notify user
+        user_message = f"""
+✅ Payment Approved!
+────────────────────
+Your payment of ₹{payment_request['amount']} has been approved.
+
+💰 {payment_request['credits']} 🪙 credits have been added to your account.
+
+New balance: {users[uid]['credits']} 🪙
+
+Thank you for your purchase!
+"""
+        
+        try:
+            await context.bot.send_message(
+                chat_id=target_user_id,
+                text=user_message
+            )
+        except Exception as e:
+            print(f"Error notifying user: {e}")
+        
+        await query.edit_message_text(f"✅ Payment approved. {payment_request['credits']} 🪙 credits added to user {target_user_id}.")
+        
+    elif action == "reject":
+        # Ask admin for rejection reason
+        context.user_data['admin_action'] = f"reject_{request_id}"
+        await query.edit_message_text("Please provide a reason for rejection:")
+
+# ==== Handle Admin Payment Rejection ====
+async def handle_admin_rejection_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin only.")
+        return
+    
+    if 'admin_action' not in context.user_data or not context.user_data['admin_action'].startswith("reject_"):
+        await update.message.reply_text("❌ No rejection action in progress.")
+        return
+    
+    request_id = context.user_data['admin_action'].split("_")[1]
+    reason = update.message.text
+    
+    payment_requests = load_payment_requests()
+    
+    if request_id not in payment_requests:
+        await update.message.reply_text("❌ Payment request not found.")
+        return
+    
+    payment_request = payment_requests[request_id]
+    target_user_id = payment_request["user_id"]
+    
+    # Update payment request status
+    update_payment_request(request_id, "rejected", reason)
+    
+    # Notify user
+    user_message = f"""
+❌ Payment Rejected
+────────────────────
+Your payment of ₹{payment_request['amount']} has been rejected.
+
+Reason: {reason}
+
+If you believe this is a mistake, please contact {OWNER_USERNAME}.
+"""
+    
+    try:
+        await context.bot.send_message(
+            chat_id=target_user_id,
+            text=user_message
+        )
+    except Exception as e:
+        print(f"Error notifying user: {e}")
+    
+    await update.message.reply_text("✅ Payment rejected. User has been notified.")
+    
+    # Clear admin action
+    context.user_data['admin_action'] = None
+
+# ==== Gift Code Function ====
+async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    if not await force_membership_check(update, context):
+        return
+    
     context.user_data.pop('in_search_mode', None)
     context.user_data.pop('admin_action', None)
     
-    # Set state to wait for gift code
     context.user_data['waiting_for_gift_code'] = True
     
-    # Send prompt message
     await update.message.reply_photo(
         photo=GIFT_IMAGE_URL,
         caption="🎁 [ GIFT CODE ] 🎁\n\nPlease enter your gift code:"
     )
 
 async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Process gift code entered by user"""
     user_id = update.effective_user.id
     gift_code = update.message.text.strip().upper()
     
-    # Check if we're waiting for a gift code
     if not context.user_data.get('waiting_for_gift_code', False):
         return
     
-    # Clear the state
     context.user_data['waiting_for_gift_code'] = False
     
-    # Check if user exists
     users = load_users()
     uid = str(user_id)
     
@@ -822,27 +1135,22 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ User not found. Please use /start first.")
         return
     
-    # Check if user has already claimed this code
     if gift_code in users[uid].get("claimed_gift_codes", []):
         await update.message.reply_text("❌ You have already claimed this gift code.")
         return
     
-    # Try to claim the gift code
     success, result = claim_gift_code(gift_code, user_id, users[uid]["name"])
     
     if success:
-        # Add credits to user
         users[uid]["credits"] += result
         users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
         
-        # Add to claimed codes
         if "claimed_gift_codes" not in users[uid]:
             users[uid]["claimed_gift_codes"] = []
         users[uid]["claimed_gift_codes"].append(gift_code)
         
         save_users(users)
         
-        # Broadcast the claim
         gift_codes = load_gift_codes()
         gift_name = gift_codes[gift_code].get("name", "Unknown Gift")
         
@@ -855,29 +1163,25 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ⏰ Claimed at: {datetime.now().strftime('%d/%m - %I:%M %p')}
 """
         
-        # Broadcast to all users
         await broadcast_to_all_users(context, broadcast_msg)
         
-        # Send success message to user
         await update.message.reply_text(
             f"✅ Gift code claimed successfully!\n\n"
             f"🎁 You received: {result} 🪙\n"
             f"💰 New balance: {users[uid]['credits']} 🪙"
         )
         
-        # Log the claim
         log_audit_event(user_id, "GIFT_CODE_CLAIMED", f"Code: {gift_code}, Amount: {result}")
     else:
         await update.message.reply_text(f"❌ {result}")
 
 async def broadcast_to_all_users(context, message):
-    """Broadcast a message to all users"""
     users = load_users()
     
     for uid in users:
         try:
             await context.bot.send_message(chat_id=int(uid), text=message)
-            await asyncio.sleep(0.1)  # Prevent flooding
+            await asyncio.sleep(0.1)
         except Exception as e:
             print(f"Failed to send message to {uid}: {e}")
 
@@ -901,11 +1205,9 @@ async def show_spinner(update, context, message):
 
 # ==== ADMIN FUNCTIONS ====
 async def is_admin(user_id: int) -> bool:
-    """Check if user is admin"""
     return user_id == ADMIN_ID
 
 async def notify_user_credits(context, user_id, action, amount, new_balance):
-    """Notify user when admin modifies their credits"""
     try:
         message = f"""
 💳 [ CREDIT UPDATE ] 💳 
@@ -921,7 +1223,6 @@ Thank You For Using Our Service 🙏
         print(f"Could not notify user {user_id}: {e}")
 
 async def addcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Add credits to a user"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only.")
@@ -951,13 +1252,11 @@ async def addcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     log_audit_event(user_id, "ADMIN_ADD_CREDITS", 
                    f"Target: {target_user_id}, Amount: {amount}, New Balance: {users[uid]['credits']}")
     
-    # Notify the user
     await notify_user_credits(context, target_user_id, "added", amount, users[uid]['credits'])
     
     await update.message.reply_text(f"✅ Added {amount} Credits To User {target_user_id}\nNew Balance ➜ {users[uid]['credits']} 🪙")
 
 async def setcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Set user's credits to specific amount"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only")
@@ -988,13 +1287,11 @@ async def setcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     log_audit_event(user_id, "ADMIN_SET_CREDITS", 
                    f"Target: {target_user_id}, New Amount: {amount}")
     
-    # Notify the user
     await notify_user_credits(context, target_user_id, "set", amount, amount)
     
     await update.message.reply_text(f"✅ Set Credits For User {target_user_id} To {amount} 🪙")
 
 async def userinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get user information"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only")
@@ -1044,7 +1341,6 @@ async def userinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(info_msg)
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Broadcast message to all users"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only")
@@ -1075,7 +1371,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"Failed to send to {uid}: {e}")
             fail_count += 1
-        await asyncio.sleep(0.1)  # Prevent flooding
+        await asyncio.sleep(0.1)
 
     log_audit_event(user_id, "ADMIN_BROADCAST", 
                    f"Message: {message}, Success: {success_count}, Failed: {fail_count}")
@@ -1084,7 +1380,6 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==== Generate Gift Code Function ====
 async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Generate a new gift code"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only")
@@ -1098,10 +1393,8 @@ async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TY
         amount = int(context.args[0])
         name = " ".join(context.args[1:])
         
-        # Generate gift code
         code = create_gift_code(amount, name, user_id)
         
-        # Broadcast the new gift code
         broadcast_msg = f"""
 🎉 [ NEW GIFT CODE ] 🎉
 
@@ -1118,10 +1411,8 @@ async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TY
 Hurry up! First come first served.
 """
         
-        # Broadcast to all users
         await broadcast_to_all_users(context, broadcast_msg)
         
-        # Create inline keyboard with copy button
         keyboard = [
             [InlineKeyboardButton("📋 Copy Code", callback_data=f"copy_{code}")]
         ]
@@ -1142,7 +1433,6 @@ Hurry up! First come first served.
         await update.message.reply_text("❌ Invalid amount. Please use a number.")
 
 async def handle_copy_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle copy code button click"""
     query = update.callback_query
     await query.answer()
     
@@ -1155,7 +1445,6 @@ async def handle_copy_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==== Referral Stats Function ====
 async def referral_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show referral statistics for admin"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only")
@@ -1163,17 +1452,15 @@ async def referral_stats_command(update: Update, context: ContextTypes.DEFAULT_T
 
     users = load_users()
     
-    # Calculate total referrals and credits
     total_referrals = sum(user.get("referrals", 0) for user in users.values())
     total_referral_credits = sum(user.get("referral_credits", 0) for user in users.values())
     
-    # Get top referrers
     top_referrers = sorted(
         [(uid, user_data.get("name", "Unknown"), user_data.get("referrals", 0), user_data.get("referral_credits", 0)) 
          for uid, user_data in users.items() if user_data.get("referrals", 0) > 0],
-        key=lambda x: x[2],  # Sort by referral count
+        key=lambda x: x[2],
         reverse=True
-    )[:10]  # Top 10 referrers
+    )[:10]
 
     stats_msg = f"""
 📊 [REFERRAL STATS] 📊
@@ -1188,7 +1475,6 @@ async def referral_stats_command(update: Update, context: ContextTypes.DEFAULT_T
     for i, (uid, name, referrals, credits) in enumerate(top_referrers, 1):
         stats_msg += f"{i}. {name} (ID: {uid}) - {referrals} referrals, {credits} credits\n"
     
-    # Add pagination if needed (for full user list)
     keyboard = [
         [InlineKeyboardButton("📋 Full Referral List", callback_data="full_referral_list_1")]
     ]
@@ -1197,7 +1483,6 @@ async def referral_stats_command(update: Update, context: ContextTypes.DEFAULT_T
     await update.message.reply_text(stats_msg, reply_markup=reply_markup)
 
 async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show full referral list with pagination"""
     query = update.callback_query
     await query.answer()
     
@@ -1206,19 +1491,15 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
         await query.edit_message_text("❌ Admin Only")
         return
     
-    # Get page number from callback data
     page_num = int(query.data.split("_")[-1])
     
     users = load_users()
     
-    # Get all users with referrals
     referrers = [(uid, user_data.get("name", "Unknown"), user_data.get("referrals", 0), user_data.get("referral_credits", 0)) 
                  for uid, user_data in users.items() if user_data.get("referrals", 0) > 0]
     
-    # Sort by referral count
     referrers.sort(key=lambda x: x[2], reverse=True)
     
-    # Pagination
     items_per_page = 10
     total_pages = (len(referrers) + items_per_page - 1) // items_per_page
     
@@ -1234,7 +1515,6 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
     for i, (uid, name, referrals, credits) in enumerate(referrers[start_idx:end_idx], start_idx + 1):
         list_msg += f"{i}. {name} (ID: {uid}) - {referrals} referrals, {credits} credits\n"
     
-    # Create pagination buttons
     keyboard = []
     if page_num > 1:
         keyboard.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"full_referral_list_{page_num-1}"))
@@ -1245,9 +1525,144 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
     
     await query.edit_message_text(list_msg, reply_markup=reply_markup)
 
+# ==== Ban User Function ====
+async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) < 2:
+        await update.message.reply_text("❌ Use /ban <user_id> <reason>")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        reason = " ".join(context.args[1:])
+    except ValueError:
+        await update.message.reply_text("❌ Invalid User ID")
+        return
+
+    banned_users = load_banned_users()
+    uid = str(target_user_id)
+    
+    banned_users[uid] = {
+        "reason": reason,
+        "banned_by": user_id,
+        "banned_at": datetime.now().isoformat()
+    }
+    
+    save_banned_users(banned_users)
+    
+    log_audit_event(user_id, "USER_BANNED", f"Banned user: {target_user_id}, Reason: {reason}")
+    
+    await update.message.reply_text(f"✅ User {target_user_id} has been banned.\nReason: {reason}")
+
+# ==== Lock/Unlock Features Functions ====
+async def lock_feature_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Use /lock <feature>\nFeatures: phone, email, name")
+        return
+
+    feature = context.args[0].lower()
+    locked_features = load_locked_features()
+    
+    if feature not in locked_features:
+        await update.message.reply_text("❌ Invalid feature. Use: phone, email, name")
+        return
+    
+    locked_features[feature] = True
+    save_locked_features(locked_features)
+    
+    log_audit_event(user_id, "FEATURE_LOCKED", f"Locked feature: {feature}")
+    
+    await update.message.reply_text(f"✅ {feature.capitalize()} search has been locked.")
+
+async def unlock_feature_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("❌ Use /unlock <feature>\nFeatures: phone, email, name")
+        return
+
+    feature = context.args[0].lower()
+    locked_features = load_locked_features()
+    
+    if feature not in locked_features:
+        await update.message.reply_text("❌ Invalid feature. Use: phone, email, name")
+        return
+    
+    locked_features[feature] = False
+    save_locked_features(locked_features)
+    
+    log_audit_event(user_id, "FEATURE_UNLOCKED", f"Unlocked feature: {feature}")
+    
+    await update.message.reply_text(f"✅ {feature.capitalize()} search has been unlocked.")
+
+# ==== Check if feature is locked ====
+def is_feature_locked(feature_type, query):
+    locked_features = load_locked_features()
+    
+    if feature_type == "phone" and locked_features.get("phone", False):
+        return True
+    elif feature_type == "email" and locked_features.get("email", False) and "@" in query:
+        return True
+    elif feature_type == "name" and locked_features.get("name", False) and not re.match(r'^[\d+]+$', query) and "@" not in query:
+        return True
+    
+    return False
+
+# ==== Payment Requests Function ====
+async def payment_requests_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    payment_requests = load_payment_requests()
+    
+    pending_requests = {k: v for k, v in payment_requests.items() if v.get("status") == "under_review"}
+    
+    if not pending_requests:
+        await update.message.reply_text("📋 No pending payment requests.")
+        return
+    
+    requests_msg = "📋 [PENDING PAYMENT REQUESTS]\n────────────────────\n"
+    
+    for req_id, req_data in list(pending_requests.items())[:5]:
+        requests_msg += f"""
+Request ID: {req_id}
+User: {req_data.get('user_name', 'Unknown')} (ID: {req_data.get('user_id')})
+Amount: ₹{req_data.get('amount', 0)}
+Credits: {req_data.get('credits', 0)} 🪙
+Date: {req_data.get('created_at', 'N/A')}
+────────────────────
+"""
+    
+    keyboard = []
+    for req_id in list(pending_requests.keys())[:3]:
+        keyboard.append([
+            InlineKeyboardButton(f"✅ Approve {req_id[:8]}", callback_data=f"approve_{req_id}"),
+            InlineKeyboardButton(f"❌ Reject {req_id[:8]}", callback_data=f"reject_{req_id}")
+        ])
+    
+    if len(pending_requests) > 3:
+        keyboard.append([InlineKeyboardButton("📄 More Requests", callback_data="more_requests_1")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(requests_msg, reply_markup=reply_markup)
+
 # ==== ADMIN PANEL HANDLERS ====
 async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle admin panel button clicks"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only.")
@@ -1278,18 +1693,31 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif text == "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs":
         await referral_stats_command(update, context)
         
+    elif text == "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs":
+        context.user_data['admin_action'] = 'lock_feature'
+        await update.message.reply_text("🔒 Send feature to lock (phone, email, name)")
+        
+    elif text == "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs":
+        context.user_data['admin_action'] = 'unlock_feature'
+        await update.message.reply_text("🔓 Send feature to unlock (phone, email, name)")
+        
+    elif text == "🚫 𝐁ᴀɴ 𝐔sᴇʀ":
+        context.user_data['admin_action'] = 'ban_user'
+        await update.message.reply_text("🚫 Send User ID and Reason (space separated)\nExample: 123456789 Spamming")
+        
+    elif text == "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs":
+        await payment_requests_command(update, context)
+        
     elif text == "📊 𝐒ᴛᴀᴛs":
         await admin_stats(update, context)
         
     elif text == "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ":
-        # Clear admin mode and action
         context.user_data['admin_mode'] = False
         if 'admin_action' in context.user_data:
             del context.user_data['admin_action']
         await update.message.reply_text("🔙 Returning to main menu", reply_markup=get_main_keyboard())
 
 async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle admin input for various actions"""
     user_id = update.effective_user.id
     if not await is_admin(user_id):
         await update.message.reply_text("❌ Admin Only.")
@@ -1325,7 +1753,6 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             log_audit_event(user_id, "ADMIN_ADD_CREDITS", 
                            f"Target: {target_user_id}, Amount: {amount}, New Balance: {users[uid]['credits']}")
             
-            # Notify the user
             await notify_user_credits(context, target_user_id, "added", amount, users[uid]['credits'])
             
             await update.message.reply_text(f"✅ Added {amount} Credits To User {target_user_id}\nNew Balance ➜ {users[uid]['credits']} 🪙", reply_markup=get_admin_keyboard())
@@ -1353,7 +1780,6 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             log_audit_event(user_id, "ADMIN_SET_CREDITS", 
                            f"Target: {target_user_id}, New Amount: {amount}")
             
-            # Notify the user
             await notify_user_credits(context, target_user_id, "set", amount, amount)
             
             await update.message.reply_text(f"✅ Set Credits For User {target_user_id} To {amount} 🪙", reply_markup=get_admin_keyboard())
@@ -1416,7 +1842,7 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 except Exception as e:
                     print(f"Failed to send to {uid}: {e}")
                     fail_count += 1
-                await asyncio.sleep(0.1)  # Prevent flooding
+                await asyncio.sleep(0.1)
 
             log_audit_event(user_id, "ADMIN_BROADCAST", 
                            f"Message: {message}, Success: {success_count}, Failed: {fail_count}")
@@ -1433,10 +1859,8 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 amount = int(parts[0])
                 name = " ".join(parts[1:])
                 
-                # Generate gift code
                 code = create_gift_code(amount, name, user_id)
                 
-                # Broadcast the new gift code
                 broadcast_msg = f"""
 🎉 [ NEW GIFT CODE ] 🎉
 
@@ -1453,10 +1877,8 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 Hurry up! First come first served.
 """
                 
-                # Broadcast to all users
                 await broadcast_to_all_users(context, broadcast_msg)
                 
-                # Create inline keyboard with copy button
                 keyboard = [
                     [InlineKeyboardButton("📋 Copy Code", callback_data=f"copy_{code}")]
                 ]
@@ -1475,27 +1897,81 @@ Hurry up! First come first served.
                 
             except ValueError:
                 await update.message.reply_text("❌ Invalid amount. Please use a number.", reply_markup=get_admin_keyboard())
+        
+        elif action == 'lock_feature':
+            feature = text.lower()
+            locked_features = load_locked_features()
+            
+            if feature not in locked_features:
+                await update.message.reply_text("❌ Invalid feature. Use: phone, email, name", reply_markup=get_admin_keyboard())
+                return
+            
+            locked_features[feature] = True
+            save_locked_features(locked_features)
+            
+            log_audit_event(user_id, "FEATURE_LOCKED", f"Locked feature: {feature}")
+            
+            await update.message.reply_text(f"✅ {feature.capitalize()} search has been locked.", reply_markup=get_admin_keyboard())
+        
+        elif action == 'unlock_feature':
+            feature = text.lower()
+            locked_features = load_locked_features()
+            
+            if feature not in locked_features:
+                await update.message.reply_text("❌ Invalid feature. Use: phone, email, name", reply_markup=get_admin_keyboard())
+                return
+            
+            locked_features[feature] = False
+            save_locked_features(locked_features)
+            
+            log_audit_event(user_id, "FEATURE_UNLOCKED", f"Unlocked feature: {feature}")
+            
+            await update.message.reply_text(f"✅ {feature.capitalize()} search has been unlocked.", reply_markup=get_admin_keyboard())
+        
+        elif action == 'ban_user':
+            parts = text.split()
+            if len(parts) < 2:
+                await update.message.reply_text("❌ Invalid format. Use: <user_id> <reason>", reply_markup=get_admin_keyboard())
+                return
+                
+            try:
+                target_user_id = int(parts[0])
+                reason = " ".join(parts[1:])
+            except ValueError:
+                await update.message.reply_text("❌ Invalid User ID", reply_markup=get_admin_keyboard())
+                return
+
+            banned_users = load_banned_users()
+            uid = str(target_user_id)
+            
+            banned_users[uid] = {
+                "reason": reason,
+                "banned_by": user_id,
+                "banned_at": datetime.now().isoformat()
+            }
+            
+            save_banned_users(banned_users)
+            
+            log_audit_event(user_id, "USER_BANNED", f"Banned user: {target_user_id}, Reason: {reason}")
+            
+            await update.message.reply_text(f"✅ User {target_user_id} has been banned.\nReason: {reason}", reply_markup=get_admin_keyboard())
             
     except ValueError:
         await update.message.reply_text("❌ Invalid input. Please use the correct format.", reply_markup=get_admin_keyboard())
     except Exception as e:
         await update.message.reply_text(f"❌ Error: {str(e)}", reply_markup=get_admin_keyboard())
     
-    # Clear the action
     context.user_data['admin_action'] = None
 
 # ==== Pagination Functions ====
 def create_pagination_keyboard(current_page, total_pages):
     keyboard = []
     
-    # Previous button
     if current_page > 1:
         keyboard.append(InlineKeyboardButton("⬅️", callback_data=f"page_{current_page-1}"))
     
-    # Page indicator
     keyboard.append(InlineKeyboardButton(f"{current_page}/{total_pages}", callback_data="current_page"))
     
-    # Next button
     if current_page < total_pages:
         keyboard.append(InlineKeyboardButton("➡️", callback_data=f"page_{current_page+1}"))
     
@@ -1511,7 +1987,6 @@ async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         page_num = int(query.data.split("_")[1])
         
-        # Get the pagination data from context
         if 'pagination' not in context.user_data:
             await query.edit_message_text("❌ Session Expired. Please Search Again.")
             return
@@ -1524,7 +1999,6 @@ async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ Invalid Page")
             return
             
-        # Update the message with the new page
         keyboard = create_pagination_keyboard(page_num, total_pages)
         await query.edit_message_text(pages[page_num-1], reply_markup=keyboard)
         
@@ -1536,46 +2010,49 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
     
-    # Clear any existing states
     context.user_data.pop('pagination', None)
     context.user_data.pop('in_search_mode', None)
     context.user_data.pop('waiting_for_gift_code', None)
     context.user_data.pop('admin_mode', None)
     context.user_data.pop('admin_action', None)
     
-    # Check for referral code in start parameters
+    if is_user_banned(user_id):
+        banned_users = load_banned_users()
+        ban_data = banned_users.get(str(user_id), {})
+        ban_reason = ban_data.get("reason", "No reason provided")
+        
+        await update.message.reply_photo(
+            photo=BANNED_IMAGE_URL,
+            caption=f"🚫 You have been banned from using this bot.\n\nReason: {ban_reason}\n\nContact owner for more information: {OWNER_USERNAME}",
+            reply_markup=get_banned_keyboard()
+        )
+        return
+    
     referred_by = None
     if context.args and len(context.args) > 0:
         referral_code = context.args[0]
         
-        # Find user with this referral code
         users = load_users()
         for uid, user_data in users.items():
             if user_data.get("referral_code") == referral_code and int(uid) != user_id:
                 referred_by = int(uid)
                 break
     
-    # Log the start command
     log_audit_event(user_id, "START_COMMAND", f"User: {name}, Referred by: {referred_by}")
     
-    # Check if user is already in database
     users = load_users()
     user_data = users.get(str(user_id), {})
     
-    # Always check current membership status
     is_member = await check_membership(update, context, user_id)
     
     if is_member:
-        # User is a member of channels
         if not user_data:
-            # New user - add to database with initial credits
             user_data = update_user(user_id, credits=2, 
                                   name=name, 
                                   last_verified=datetime.now().isoformat(),
                                   initial_credits_given=True,
                                   referred_by=referred_by)
             
-            # Add referral credits if applicable
             if referred_by and referred_by != user_id:
                 add_referral_credits(referred_by)
                 log_audit_event(user_id, "REFERRAL_JOIN", f"Referred by: {referred_by}")
@@ -1589,7 +2066,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=get_main_keyboard()
             )
         else:
-            # Existing user - just update name if needed
             user_data = update_user(user_id, name=name)
             add_verification_record(user_id, True, "Existing user - membership verified")
             await update.message.reply_photo(
@@ -1598,7 +2074,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=get_main_keyboard()
             )
     else:
-        # User hasn't joined both channels, show join buttons
         keyboard = [
             [InlineKeyboardButton("📢 Join Channel 1", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")],
             [InlineKeyboardButton("📢 Join Channel 2", url=f"https://t.me/{CHANNEL_USERNAME_2[1:]}")],
@@ -1628,7 +2103,18 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
     
-    # Check if user has joined both channels
+    if is_user_banned(user_id):
+        banned_users = load_banned_users()
+        ban_data = banned_users.get(str(user_id), {})
+        ban_reason = ban_data.get("reason", "No reason provided")
+        
+        await query.message.reply_photo(
+            photo=BANNED_IMAGE_URL,
+            caption=f"🚫 You have been banned from using this bot.\n\nReason: {ban_reason}\n\nContact owner for more information: {OWNER_USERNAME}",
+            reply_markup=get_banned_keyboard()
+        )
+        return
+    
     is_member = await check_membership(update, context, user_id)
     
     users = load_users()
@@ -1637,13 +2123,11 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_member:
         if not user_data:
-            # New user - add to database with initial credits
             user_data = update_user(user_id, credits=2, name=name, 
                                   last_verified=datetime.now().isoformat(),
                                   initial_credits_given=True)
             add_verification_record(user_id, True, "New user - initial credits granted via verify")
             
-            # Show success message
             try:
                 await query.message.edit_caption(
                     caption="✅ Verification Successful! 🎉🎊\n\n"
@@ -1659,7 +2143,6 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
         else:
             if not user_data.get("initial_credits_given", False):
-                # Give initial credits if not given before
                 user_data = update_user(user_id, credits=user_data.get("credits", 0) + 2, 
                                       name=name, last_verified=datetime.now().isoformat(),
                                       initial_credits_given=True)
@@ -1678,7 +2161,6 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         "Enjoy Using Our Service 🙏"
                     )
             else:
-                # Already received credits, just update verification status
                 user_data = update_user(user_id, name=name, 
                                       last_verified=datetime.now().isoformat())
                 add_verification_record(user_id, True, "Existing user - reverified")
@@ -1695,7 +2177,6 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
             await context.bot.send_message(chat_id=user_id, text="Choose an option:", reply_markup=get_main_keyboard())
     else:
-        # User hasn't joined both channels
         add_verification_record(user_id, False, "Verification failed - not member of channels")
         
         keyboard = [
@@ -1729,51 +2210,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     if query.data == "buy":
-        buy_message = """
-💳 [ BUY MENU ] 💳
-────────────────────
-
-1️⃣ Starter Pack 🔰 
-➤10 Credits → ₹25 
-🎁Bonus: +2 Free Credits 
-📈Best for small searches
-────────────────────
-
-2️⃣ Value Pack 🔒 
-➤25 Credits → ₹50 
-🎁Bonus: +5 Free Credits 
-📈Perfect for regular users
-────────────────────
-
-3️⃣ Super Saver Pack 🚀 
-➤50 Credits → ₹90 
-🎁Bonus: +15 Free Credits 
-📈More searches, less money
-────────────────────
-
-4️⃣ Pro Pack 🏆 
-➤75 Credits → ₹120 
-🎁Bonus: +25 Free Credits 
-📈Best for heavy users
-────────────────────
-
-5️⃣ Mega Pack 💎 
-➤100 Credits → ₹150 
-🎁Bonus: +40 Free Credits 
-📈Maximum value & savings
-────────────────────
-
-💰 Different Payment Methods 💰
-────────────────────
-
-📲 UPI Payment - 1 Month - ₹399💰
-💳 UPI Payment - Lifetime - ₹1999💰
-📞 Contact Owner For More Prices : @pvt_s1n
-"""
-        try:
-            await query.edit_message_text(buy_message)
-        except:
-            await query.message.reply_text(buy_message)
+        await buy_command(update, context)
+        
+    elif query.data.startswith("buy_"):
+        await handle_buy_package(update, context)
+        
+    elif query.data.startswith("paid_"):
+        await handle_payment_confirmation(update, context)
+        
+    elif query.data.startswith("approve_") or query.data.startswith("reject_"):
+        await handle_admin_payment_approval(update, context)
+        
+    elif query.data == "back_to_packages":
+        await buy_command(update, context)
         
     elif query.data == "profile":
         user_id = update.effective_user.id
@@ -1797,11 +2246,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
     
-    # Clear any existing pagination data
+    if is_user_banned(user_id):
+        banned_users = load_banned_users()
+        ban_data = banned_users.get(str(user_id), {})
+        ban_reason = ban_data.get("reason", "No reason provided")
+        
+        await update.message.reply_photo(
+            photo=BANNED_IMAGE_URL,
+            caption=f"🚫 You have been banned from using this bot.\n\nReason: {ban_reason}\n\nContact owner for more information: {OWNER_USERNAME}",
+            reply_markup=get_banned_keyboard()
+        )
+        return
+    
     if 'pagination' in context.user_data:
         del context.user_data['pagination']
     
-    # Define user menu buttons
     user_menu_buttons = [
         "🔍 𝐒ᴇᴀʀᴄʜ",
         "💎 𝐂ʀᴇᴅɪᴛs",
@@ -1813,16 +2272,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🧧 𝐀ᴅᴍɪɴ"
     ]
     
-    # Check if we're waiting for a gift code
     if context.user_data.get('waiting_for_gift_code', False):
-        # If user sends a menu button while waiting for gift code, cancel the gift code state
         if text in user_menu_buttons:
             context.user_data['waiting_for_gift_code'] = False
         else:
             await process_gift_code(update, context)
             return
     
-    # If text is a menu button, reset all states
     if text in user_menu_buttons:
         context.user_data['in_search_mode'] = False
         context.user_data['waiting_for_gift_code'] = False
@@ -1830,39 +2286,60 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 'admin_action' in context.user_data:
             del context.user_data['admin_action']
     
-    # Check if user is admin and in admin mode
     is_admin_user = await is_admin(user_id)
     admin_mode = context.user_data.get('admin_mode', False)
     
     if is_admin_user and admin_mode:
-        # Handle admin panel actions
-        if text in ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]:
+        admin_buttons = [
+            "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", 
+            "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs",
+            "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
+            "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
+        ]
+        
+        if text in admin_buttons:
             await handle_admin_panel(update, context)
             return
         elif 'admin_action' in context.user_data:
             await handle_admin_input(update, context)
             return
         else:
-            # If in admin mode but no action selected, show admin keyboard
             await update.message.reply_text("👑 Admin Panel", reply_markup=get_admin_keyboard())
             return
     
-    # Check if we're in search mode
     if context.user_data.get('in_search_mode', False):
-        # Clear search mode first
         context.user_data['in_search_mode'] = False
+        
+        # Check if feature is locked
+        locked_features = load_locked_features()
+        
+        if is_feature_locked("phone", text) and re.match(r'^[\d+]+$', text):
+            await update.message.reply_photo(
+                photo=LOCKED_IMAGE_URL,
+                caption="❌ Phone number search is currently locked by admin.\n\nPlease try another search type or contact admin for more information."
+            )
+            return
+        elif is_feature_locked("email", text) and "@" in text:
+            await update.message.reply_photo(
+                photo=LOCKED_IMAGE_URL,
+                caption="❌ Email search is currently locked by admin.\n\nPlease try another search type or contact admin for more information."
+            )
+            return
+        elif is_feature_locked("name", text) and not re.match(r'^[\d+]+$', text) and "@" not in text:
+            await update.message.reply_photo(
+                photo=LOCKED_IMAGE_URL,
+                caption="❌ Name search is currently locked by admin.\n\nPlease try another search type or contact admin for more information."
+            )
+            return
+        
         await search(update, context)
         return
     
-    # Force membership check for all user actions
     if not await force_membership_check(update, context):
         return
     
-    # Handle menu buttons for all users
     if text == "🔍 𝐒ᴇᴀʀᴄʜ":
-        # Set search mode and prompt user
         context.user_data['in_search_mode'] = True
-        # Send as photo with caption
         await update.message.reply_photo(
             photo=SEARCH_IMAGE_URL, 
             caption=SEARCH_PROMPT_TEXT
@@ -1878,7 +2355,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "💠 𝐑ᴇғᴇʀ":
         await show_referral_info(update, context)
     elif text == "☎️ 𝐇ᴇʟᴘ":
-        # Send as photo with caption
         await update.message.reply_photo(
             photo=HELP_IMAGE_URL, 
             caption=HELP_TEXT
@@ -1886,14 +2362,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "🧧 𝐀ᴅᴍɪɴ":
         await admin_stats(update, context)
     else:
-        # If it's not a menu command, show help
         await update.message.reply_text("Please use the menu buttons to interact with the bot.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Force membership check
     if not await force_membership_check(update, context):
         return
-    # Send as photo with caption
     await update.message.reply_photo(
         photo=HELP_IMAGE_URL, 
         caption=HELP_TEXT
@@ -1902,62 +2375,51 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
         
     users = load_users()
 
     if str(user_id) not in users:
-        # New user - add to database but don't give credits until they verify
         name = update.effective_user.first_name
         update_user(user_id, credits=0, name=name)
-        users = load_users()  # Reload users after update
+        users = load_users()
 
     if users[str(user_id)]["credits"] <= 0:
         await update.message.reply_text(f"❌ No Credits Left!\n\n💰 Buy Unlimited Credits & Ad 👉 {OWNER_USERNAME}")
         return
 
-    # Show animated spinner
     spinner_msg = await show_spinner(update, context, update.message)
 
     query = update.message.text
     result = query_leakosint(query)
     pages = format_results(result)
 
-    # Check if server is under construction or API error
     if "SERVER" in pages[0] or "Error" in result:
         await spinner_msg.delete()
         await update.message.reply_text(pages[0])
         return
 
-    # Deduct 1 credit only if search was successful AND has data
     if "No Data" not in pages[0] and "SERVER" not in pages[0] and "Error" not in result:
         users[str(user_id)]["credits"] -= 1
         users[str(user_id)]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
         save_users(users)
         
-        # Log the search
         log_audit_event(user_id, "SEARCH", f"Query: {query}, Success: True, Credits left: {users[str(user_id)]['credits']}")
     else:
-        # Log failed search
         log_audit_event(user_id, "SEARCH", f"Query: {query}, Success: False, Credits left: {users[str(user_id)]['credits']}")
 
-    # Delete spinner message
     await spinner_msg.delete()
 
-    # Add credits info to each page
     credits_left = users[str(user_id)]["credits"]
     for i in range(len(pages)):
         pages[i] += f"\n✅ Credits Left ➜ {credits_left} 🪙"
     
-    # Store pagination data in context
     context.user_data['pagination'] = {
         'pages': pages,
         'current_page': 1
     }
     
-    # Send first page with pagination buttons if multiple pages
     if len(pages) > 1:
         keyboard = create_pagination_keyboard(1, len(pages))
         await update.message.reply_text(pages[0], reply_markup=keyboard)
@@ -1967,14 +2429,12 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
         
     users = load_users()
     
     c = users.get(str(user_id), {}).get("credits", 0)
-    # Send as photo with caption
     await update.message.reply_photo(
         photo=CREDITS_IMAGE_URL, 
         caption=f"✅ Your Credit ➜ {c} 🪙"
@@ -1983,7 +2443,6 @@ async def credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # Force membership check
     if not await force_membership_check(update, context):
         return
         
@@ -1995,7 +2454,6 @@ async def me(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # Simple admin check
     if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only.")
         return
@@ -2006,24 +2464,33 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_referrals = sum(user.get("referrals", 0) for user in users.values())
     total_referral_credits = sum(user.get("referral_credits", 0) for user in users.values())
     
+    banned_users = load_banned_users()
+    total_banned = len(banned_users)
+    
+    payment_requests = load_payment_requests()
+    pending_requests = len([r for r in payment_requests.values() if r.get("status") == "under_review"])
+    
+    locked_features = load_locked_features()
+    locked_features_list = [f for f, locked in locked_features.items() if locked]
+    
     stats_msg = f"""
 📊 [ADMIN PANEL] 📊
 
 👥 Total Users ➜ {total_users}
+🚫 Banned Users ➜ {total_banned}
 🪙 Total Credits ➜ {total_credits}
 🤝 Total Referrals ➜ {total_referrals}
 🎁 Total Referral Credits ➜ {total_referral_credits}
+💰 Pending Payments ➜ {pending_requests}
+🔒 Locked Features ➜ {', '.join(locked_features_list) if locked_features_list else 'None'}
 🔄 Updated ➜ {datetime.now().strftime('%d/%m - %I:%M %p')}
 
 """
-    
-    # Set admin mode and show admin keyboard
+
     context.user_data['admin_mode'] = True
-    # Clear any previous admin action
     if 'admin_action' in context.user_data:
         del context.user_data['admin_action']
     
-    # Send as photo with caption
     await update.message.reply_photo(
         photo=ADMIN_IMAGE_URL, 
         caption=stats_msg, 
@@ -2046,13 +2513,15 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(CommandHandler("gengift", generate_gift_command))
     app.add_handler(CommandHandler("referralstats", referral_stats_command))
+    app.add_handler(CommandHandler("ban", ban_user_command))
+    app.add_handler(CommandHandler("lock", lock_feature_command))
+    app.add_handler(CommandHandler("unlock", unlock_feature_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|profile|back_to_main|full_referral_list_|copy_|page_)"))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|buy_|paid_|approve_|reject_|back_to_packages|profile|back_to_main|full_referral_list_|copy_|page_)"))
     
     print("🙏 Service Is Running...")
     app.run_polling()
 
 if __name__ == "__main__":
-
     main()
