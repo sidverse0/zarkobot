@@ -85,7 +85,7 @@ BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
 LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
 STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
-WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"  # Add a waiting image URL
+WAITING_IMAGE_URL = "https://files.catbox.moe/mgerz3.png"  # Add a waiting image URL
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -2725,4 +2725,5 @@ def main():
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
+
     main()
