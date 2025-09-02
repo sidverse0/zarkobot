@@ -9,6 +9,7 @@ import re
 import os
 import qrcode
 import io
+import time
 from datetime import datetime, timedelta
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
@@ -23,6 +24,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from flask import Flask
 from threading import Thread
+import logging
+
+# Set up logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # ==== Flask Server for Render ====
 app = Flask(__name__)
@@ -48,7 +57,7 @@ except Exception as e:
     db = None
 
 # ==== CONFIG ====
-BOT_TOKEN = os.environ.get('BOT_TOKEN', "8116705267:AAGVx7azJJMndrXHwzoMnx7angKd0COJWjg")
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8116705267:AAFE_JuESoq6i8mRvj7b8VX-3vSxjPtO0Xw")
 CHANNEL_USERNAME = "@zarkoworld"
 CHANNEL_USERNAME_2 = "@chandhackz_78"
 OWNER_USERNAME = "@pvt_s1n"
@@ -57,6 +66,9 @@ UPI_ID = "reyazmbi2003@okaxis"
 
 LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8250754854:64fCZifF")
 API_URL = "https://leakosintapi.com/"
+
+# Bot status
+BOT_STOPPED = False
 
 # Image URLs
 START_IMAGE_URL = "https://files.catbox.moe/ppjby2.jpg"
@@ -69,9 +81,10 @@ VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
-BANNED_IMAGE_URL = "https://files.catbox.moe/example_banned.jpg"
-LOCKED_IMAGE_URL = "https://files.catbox.moe/example_locked.jpg"
+BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
+LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
+STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -205,6 +218,27 @@ def save_payment_requests(payment_requests):
             db.collection('payment_requests').document(req_id).set(req_data)
     except Exception as e:
         print(f"Error saving payment requests to Firebase: {e}")
+
+def load_bot_status():
+    if db is None:
+        return {"stopped": False}
+    try:
+        status_ref = db.collection('settings').document('bot_status')
+        doc = status_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        return {"stopped": False}
+    except Exception as e:
+        print(f"Error loading bot status from Firebase: {e}")
+        return {"stopped": False}
+
+def save_bot_status(status):
+    if db is None:
+        return
+    try:
+        db.collection('settings').document('bot_status').set(status)
+    except Exception as e:
+        print(f"Error saving bot status to Firebase: {e}")
 
 def update_user(user_id, credits=None, name=None, last_verified=None, initial_credits_given=None, referred_by=None):
     users = load_users()
@@ -442,6 +476,13 @@ def is_user_banned(user_id):
     banned_users = load_banned_users()
     return str(user_id) in banned_users
 
+# ==== Check if bot is stopped ====
+def is_bot_stopped():
+    global BOT_STOPPED
+    status = load_bot_status()
+    BOT_STOPPED = status.get("stopped", False)
+    return BOT_STOPPED
+
 # ==== Check Channel Membership ====
 async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id):
     try:
@@ -466,6 +507,15 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE, u
 # ==== Force Membership Check ====
 async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    
+    # Check if bot is stopped
+    if is_bot_stopped() and user_id != ADMIN_ID:
+        await update.message.reply_photo(
+            photo=STOPPED_IMAGE_URL,
+            caption="🚫 Bot is currently stopped for maintenance.\n\nServer request is high. Please try again later.\n\nContact owner for more information.",
+            reply_markup=get_banned_keyboard()
+        )
+        return False
     
     # Check if user is banned
     if is_user_banned(user_id):
@@ -927,11 +977,19 @@ Request ID: {request_id}
 After payment, click "I've Paid" to notify admin.
 """
 
-    await query.message.reply_photo(
-        photo=qr_img,
-        caption=caption,
-        reply_markup=reply_markup
-    )
+    # Check if the message has a photo (from callback)
+    if hasattr(query.message, 'photo') and query.message.photo:
+        await query.message.reply_photo(
+            photo=qr_img,
+            caption=caption,
+            reply_markup=reply_markup
+        )
+    else:
+        # If it's a text message, edit it
+        await query.edit_message_text(
+            text=caption,
+            reply_markup=reply_markup
+        )
 
 # ==== Handle Payment Confirmation ====
 async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -984,7 +1042,11 @@ Click below to approve or reject:
     except Exception as e:
         print(f"Error notifying admin: {e}")
     
-    await query.edit_message_text("✅ Payment confirmation received. Admin will review your payment shortly.")
+    # Send a new message instead of editing the existing one
+    await context.bot.send_message(
+        chat_id=user_id,
+        text="✅ Payment confirmation received. Admin will review your payment shortly."
+    )
 
 # ==== Handle Admin Payment Approval ====
 async def handle_admin_payment_approval(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1607,6 +1669,37 @@ async def unlock_feature_command(update: Update, context: ContextTypes.DEFAULT_T
     
     await update.message.reply_text(f"✅ {feature.capitalize()} search has been unlocked.")
 
+# ==== Bot Stop/Start Functions ====
+async def stopbot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    status = {"stopped": True}
+    save_bot_status(status)
+    global BOT_STOPPED
+    BOT_STOPPED = True
+    
+    log_audit_event(user_id, "BOT_STOPPED", "Bot stopped by admin")
+    
+    await update.message.reply_text("✅ Bot has been stopped. Users will not be able to use it.")
+
+async def startbot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await is_admin(user_id):
+        await update.message.reply_text("❌ Admin Only")
+        return
+
+    status = {"stopped": False}
+    save_bot_status(status)
+    global BOT_STOPPED
+    BOT_STOPPED = False
+    
+    log_audit_event(user_id, "BOT_STARTED", "Bot started by admin")
+    
+    await update.message.reply_text("✅ Bot has been started. Users can now use it.")
+
 # ==== Check if feature is locked ====
 def is_feature_locked(feature_type, query):
     locked_features = load_locked_features()
@@ -1629,7 +1722,8 @@ async def payment_requests_command(update: Update, context: ContextTypes.DEFAULT
 
     payment_requests = load_payment_requests()
     
-    pending_requests = {k: v for k, v in payment_requests.items() if v.get("status") == "under_review"}
+    # Show both pending and under_review requests
+    pending_requests = {k: v for k, v in payment_requests.items() if v.get("status") in ["pending", "under_review"]}
     
     if not pending_requests:
         await update.message.reply_text("📋 No pending payment requests.")
@@ -1643,6 +1737,7 @@ Request ID: {req_id}
 User: {req_data.get('user_name', 'Unknown')} (ID: {req_data.get('user_id')})
 Amount: ₹{req_data.get('amount', 0)}
 Credits: {req_data.get('credits', 0)} 🪙
+Status: {req_data.get('status', 'N/A')}
 Date: {req_data.get('created_at', 'N/A')}
 ────────────────────
 """
@@ -1870,7 +1965,7 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 ⏰ Valid until claimed
 
 📝 How to claim:
-1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ button
+1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴐᴅᴇ button
 2. Enter the code: {code}
 3. Get {amount} 🪙 credits instantly!
 
@@ -2009,6 +2104,15 @@ async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     name = update.effective_user.first_name
+    
+    # Check if bot is stopped
+    if is_bot_stopped() and user_id != ADMIN_ID:
+        await update.message.reply_photo(
+            photo=STOPPED_IMAGE_URL,
+            caption="🚫 Bot is currently stopped for maintenance.\n\nServer request is high. Please try again later.\n\nContact owner for more information.",
+            reply_markup=get_banned_keyboard()
+        )
+        return
     
     context.user_data.pop('pagination', None)
     context.user_data.pop('in_search_mode', None)
@@ -2222,7 +2326,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_admin_payment_approval(update, context)
         
     elif query.data == "back_to_packages":
-        await buy_command(update, context)
+        # Edit the message to show packages again
+        await show_packages(update, context)
         
     elif query.data == "profile":
         user_id = update.effective_user.id
@@ -2242,9 +2347,74 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("page_"):
         await handle_pagination(update, context)
 
+async def show_packages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = []
+    row = []
+    
+    for i, (amount, details) in enumerate(PAYMENT_PACKAGES.items()):
+        row.append(InlineKeyboardButton(f"₹{amount} - {details['credits']}🪙", callback_data=f"buy_{amount}"))
+        
+        if (i + 1) % 2 == 0:
+            keyboard.append(row)
+            row = []
+    
+    if row:
+        keyboard.append(row)
+    
+    keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_main")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    buy_message = """
+💳 [ BUY CREDITS ] 💳
+────────────────────
+
+Choose a payment package:
+
+💰 Payment Options:
+- 10 Rs = 100 Credits
+- 20 Rs = 200 Credits
+- 30 Rs = 300 Credits
+- 40 Rs = 400 Credits
+- 50 Rs = 500 Credits
+- 100 Rs = 1000 Credits
+- 200 Rs = 2000 Credits
+- 500 Rs = 5000 Credits
+
+📝 How to purchase:
+1. Select a package
+2. Pay via UPI using the QR code
+3. Click "I've Paid" after payment
+4. Wait for admin approval
+
+────────────────────
+Note: Payments are manually verified by admin. Please be patient.
+"""
+
+    # Check if it's a callback query or message
+    if hasattr(update, 'callback_query') and update.callback_query:
+        await update.callback_query.edit_message_text(
+            text=buy_message,
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(
+            text=buy_message,
+            reply_markup=reply_markup
+        )
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
+    
+    # Check if bot is stopped
+    if is_bot_stopped() and user_id != ADMIN_ID:
+        await update.message.reply_photo(
+            photo=STOPPED_IMAGE_URL,
+            caption="🚫 Bot is currently stopped for maintenance.\n\nServer request is high. Please try again later.\n\nContact owner for more information.",
+            reply_markup=get_banned_keyboard()
+        )
+        return
     
     if is_user_banned(user_id):
         banned_users = load_banned_users()
@@ -2293,7 +2463,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admin_buttons = [
             "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", 
             "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs",
-            "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
+            "🔒 𝐋ᴏᴄᴑ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
             "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
         ]
         
@@ -2468,10 +2638,12 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_banned = len(banned_users)
     
     payment_requests = load_payment_requests()
-    pending_requests = len([r for r in payment_requests.values() if r.get("status") == "under_review"])
+    pending_requests = len([r for r in payment_requests.values() if r.get("status") in ["pending", "under_review"]])
     
     locked_features = load_locked_features()
     locked_features_list = [f for f, locked in locked_features.items() if locked]
+    
+    bot_status = "🟢 Running" if not is_bot_stopped() else "🔴 Stopped"
     
     stats_msg = f"""
 📊 [ADMIN PANEL] 📊
@@ -2483,6 +2655,7 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🎁 Total Referral Credits ➜ {total_referral_credits}
 💰 Pending Payments ➜ {pending_requests}
 🔒 Locked Features ➜ {', '.join(locked_features_list) if locked_features_list else 'None'}
+📊 Bot Status ➜ {bot_status}
 🔄 Updated ➜ {datetime.now().strftime('%d/%m - %I:%M %p')}
 
 """
@@ -2497,9 +2670,28 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_admin_keyboard()
     )
 
+# ==== Error Handler ====
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Log the error and send a telegram message to notify the developer."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
+    
+    # Only send error message to admin
+    if ADMIN_ID:
+        error_msg = f"An exception was raised while handling an update:\n{context.error}"
+        try:
+            await context.bot.send_message(chat_id=ADMIN_ID, text=error_msg)
+        except:
+            pass  # Avoid infinite loop if sending error message fails
+
 # ==== MAIN ====
 def main():
+    # Load bot status on startup
+    is_bot_stopped()
+    
     app = Application.builder().token(BOT_TOKEN).build()
+
+    # Add error handler
+    app.add_error_handler(error_handler)
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("credits", credits))
@@ -2516,13 +2708,14 @@ def main():
     app.add_handler(CommandHandler("ban", ban_user_command))
     app.add_handler(CommandHandler("lock", lock_feature_command))
     app.add_handler(CommandHandler("unlock", unlock_feature_command))
+    app.add_handler(CommandHandler("stopbot", stopbot_command))
+    app.add_handler(CommandHandler("startbot", startbot_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
     app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|buy_|paid_|approve_|reject_|back_to_packages|profile|back_to_main|full_referral_list_|copy_|page_)"))
     
     print("🙏 Service Is Running...")
-    app.run_polling()
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
-
     main()
