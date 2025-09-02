@@ -85,7 +85,7 @@ BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
 LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
 STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
-WAITING_IMAGE_URL = "https://files.catbox.moe/mgerz3.png"  # Add a waiting image URL
+WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"  # Add a waiting image URL
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -111,7 +111,7 @@ SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
 
 ✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ �𝐴ɴʏ 𝐍ᴀᴍᴇ
 
-🌏 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
+🌏 𝐈 𝐒ᴇᴀʀᴄʜ �𝐴ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
 ────────────────────
 ➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎 
 ➛ 𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
@@ -329,7 +329,7 @@ def log_audit_event(user_id, event_type, details):
 def get_main_keyboard():
     keyboard = [
         ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ"],
-        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
+        ["🎖️ 𝐏ʜᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
         ["☎️ 𝐇ᴇʟᴘ", "🧧 𝐀ᴅᴍɪɴ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Choose Options")
@@ -337,15 +337,15 @@ def get_main_keyboard():
 def get_admin_keyboard():
     keyboard = [
         ["🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ"],
-        ["📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs"],
+        ["📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs"],
         ["🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ"],
-        ["💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
+        ["🟢 𝐒ᴛᴀʀᴛ 𝐁ᴏᴛ", "🔴 𝐒ᴛᴏᴩ 𝐁ᴏᴛ", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Admin Panel")
 
 def get_banned_keyboard():
-    keyboard = [["☎️ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ"]]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    keyboard = [[InlineKeyboardButton("☎️ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ", url=f"https://t.me/{OWNER_USERNAME[1:]}")]]
+    return InlineKeyboardMarkup(keyboard)
 
 # ==== Gift Code Functions ====
 def generate_gift_code(length=12):
@@ -427,12 +427,12 @@ def optimize_email_query(email):
 def generate_user_hash(user_id):
     random.seed(user_id)
     characters = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(characters) for _ in range(6))
+    return ''.join([random.choice(characters) for _ in range(6)])
 
 def generate_referral_code(user_id):
     random.seed(user_id)
     characters = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(characters) for _ in range(8))
+    return ''.join([random.choice(characters) for _ in range(8)])
 
 def add_referral_credits(referrer_id):
     users = load_users()
@@ -1073,8 +1073,8 @@ async def handle_admin_payment_approval(update: Update, context: ContextTypes.DE
         uid = str(target_user_id)
         
         if uid not in users:
-            await query.edit_message_text("❌ User not found.")
-            return
+        await query.edit_message_text("❌ User not found.")
+        return
         
         users[uid]["credits"] += payment_request["credits"]
         save_users(users)
@@ -1778,12 +1778,12 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data['admin_action'] = 'broadcast'
         await update.message.reply_text("📢 Send Message To Broadcast")
         
-    elif text == "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ":
+    elif text == "🎁 𝐆ᴇɴᴅʀᴀᴛᴇ 𝐆ɪғᴛ":
         context.user_data['admin_action'] = 'generate_gift'
         await update.message.reply_text("🎁 Send Amount and Name (space separated)\nExample: 5 Special Gift")
         
-    elif text == "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs":
-        await referral_stats_command(update, context)
+    elif text == "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs":
+        await payment_requests_command(update, context)
         
     elif text == "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs":
         context.user_data['admin_action'] = 'lock_feature'
@@ -1797,11 +1797,11 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data['admin_action'] = 'ban_user'
         await update.message.reply_text("🚫 Send User ID and Reason (space separated)\nExample: 123456789 Spamming")
         
-    elif text == "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs":
-        await payment_requests_command(update, context)
+    elif text == "🟢 𝐒ᴛᴀʀᴛ 𝐁ᴏᴛ":
+        await startbot_command(update, context)
         
-    elif text == "📊 𝐒ᴛᴀᴛs":
-        await admin_stats(update, context)
+    elif text == "🔴 𝐒ᴛᴏᴩ 𝐁ᴏᴛ":
+        await stopbot_command(update, context)
         
     elif text == "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ":
         context.user_data['admin_mode'] = False
@@ -2342,7 +2342,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "profile":
         user_id = update.effective_user.id
         users = load_users()
-        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown"})
+        user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown")
         await show_profile(update, context, user_id, user_data, edit_message=True)
     
     elif query.data.startswith("full_referral_list_"):
@@ -2469,9 +2469,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_admin_user and admin_mode:
         admin_buttons = [
             "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", 
-            "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs",
+            "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs",
             "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
-            "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
+            "🟢 𝐒ᴛᴀʀᴛ 𝐁ᴏᴛ", "🔴 𝐒ᴛᴏᴩ 𝐁ᴏᴛ", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
         ]
         
         if text in admin_buttons:
@@ -2725,6 +2725,4 @@ def main():
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
-
     main()
-
