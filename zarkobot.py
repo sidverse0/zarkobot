@@ -85,6 +85,7 @@ BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
 LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
 STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
+WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"  # Add a waiting image URL
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -108,7 +109,7 @@ SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
 
 ✮📧 𝐄ᴍᴀɪʙ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
 
-✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐀ɴʏ 𝐍ᴀᴍᴇ
+✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ �𝐴ɴʏ 𝐍ᴀᴍᴇ
 
 🌏 𝐈 𝐒ᴇᴀʀᴄʜ 𝐀ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
 ────────────────────
@@ -328,7 +329,7 @@ def log_audit_event(user_id, event_type, details):
 def get_main_keyboard():
     keyboard = [
         ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ"],
-        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
+        ["🎖️ 𝐏ʜᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
         ["☎️ 𝐇ᴇʟᴘ", "🧧 𝐀ᴅᴍɪɴ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Choose Options")
@@ -845,7 +846,8 @@ def generate_qr_code(amount, upi_id=UPI_ID):
 def create_payment_request(user_id, amount, credits):
     payment_requests = load_payment_requests()
     
-    request_id = f"req_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # Generate 6-digit request ID
+    request_id = str(random.randint(100000, 999999))
     
     users = load_users()
     user_name = users.get(str(user_id), {}).get("name", "Unknown")
@@ -977,19 +979,12 @@ Request ID: {request_id}
 After payment, click "I've Paid" to notify admin.
 """
 
-    # Check if the message has a photo (from callback)
-    if hasattr(query.message, 'photo') and query.message.photo:
-        await query.message.reply_photo(
-            photo=qr_img,
-            caption=caption,
-            reply_markup=reply_markup
-        )
-    else:
-        # If it's a text message, edit it
-        await query.edit_message_text(
-            text=caption,
-            reply_markup=reply_markup
-        )
+    # Send the QR code as a photo with caption
+    await query.message.reply_photo(
+        photo=qr_img,
+        caption=caption,
+        reply_markup=reply_markup
+    )
 
 # ==== Handle Payment Confirmation ====
 async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1013,6 +1008,12 @@ async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFA
     
     # Update payment request status to under review
     update_payment_request(request_id, "under_review")
+    
+    # Show waiting message to user
+    await query.message.reply_photo(
+        photo=WAITING_IMAGE_URL,
+        caption="⏳ Your payment is under review. Admin will approve it shortly."
+    )
     
     # Notify admin
     admin_message = f"""
@@ -1041,12 +1042,6 @@ Click below to approve or reject:
         )
     except Exception as e:
         print(f"Error notifying admin: {e}")
-    
-    # Send a new message instead of editing the existing one
-    await context.bot.send_message(
-        chat_id=user_id,
-        text="✅ Payment confirmation received. Admin will review your payment shortly."
-    )
 
 # ==== Handle Admin Payment Approval ====
 async def handle_admin_payment_approval(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1055,11 +1050,13 @@ async def handle_admin_payment_approval(update: Update, context: ContextTypes.DE
     
     user_id = update.effective_user.id
     
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await query.edit_message_text("❌ Admin only.")
         return
     
-    action, request_id = query.data.split("_")
+    data_parts = query.data.split("_")
+    action = data_parts[0]
+    request_id = data_parts[1]
     
     payment_requests = load_payment_requests()
     
@@ -1117,7 +1114,7 @@ Thank you for your purchase!
 async def handle_admin_rejection_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin only.")
         return
     
@@ -1286,7 +1283,7 @@ Thank You For Using Our Service 🙏
 
 async def addcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only.")
         return
 
@@ -1320,7 +1317,7 @@ async def addcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def setcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1355,7 +1352,7 @@ async def setcredits_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def userinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1404,7 +1401,7 @@ async def userinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1443,7 +1440,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==== Generate Gift Code Function ====
 async def generate_gift_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1508,7 +1505,7 @@ async def handle_copy_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==== Referral Stats Function ====
 async def referral_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1549,7 +1546,7 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
     await query.answer()
     
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await query.edit_message_text("❌ Admin Only")
         return
     
@@ -1590,7 +1587,7 @@ async def handle_full_referral_list(update: Update, context: ContextTypes.DEFAUL
 # ==== Ban User Function ====
 async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1623,7 +1620,7 @@ async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==== Lock/Unlock Features Functions ====
 async def lock_feature_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1647,7 +1644,7 @@ async def lock_feature_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def unlock_feature_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1672,7 +1669,7 @@ async def unlock_feature_command(update: Update, context: ContextTypes.DEFAULT_T
 # ==== Bot Stop/Start Functions ====
 async def stopbot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1687,7 +1684,7 @@ async def stopbot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def startbot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1716,7 +1713,7 @@ def is_feature_locked(feature_type, query):
 # ==== Payment Requests Function ====
 async def payment_requests_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only")
         return
 
@@ -1745,8 +1742,8 @@ Date: {req_data.get('created_at', 'N/A')}
     keyboard = []
     for req_id in list(pending_requests.keys())[:3]:
         keyboard.append([
-            InlineKeyboardButton(f"✅ Approve {req_id[:8]}", callback_data=f"approve_{req_id}"),
-            InlineKeyboardButton(f"❌ Reject {req_id[:8]}", callback_data=f"reject_{req_id}")
+            InlineKeyboardButton(f"✅ Approve {req_id}", callback_data=f"approve_{req_id}"),
+            InlineKeyboardButton(f"❌ Reject {req_id}", callback_data=f"reject_{req_id}")
         ])
     
     if len(pending_requests) > 3:
@@ -1759,7 +1756,7 @@ Date: {req_data.get('created_at', 'N/A')}
 # ==== ADMIN PANEL HANDLERS ====
 async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only.")
         return
         
@@ -1814,7 +1811,7 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if not await is_admin(user_id):
+    if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Admin Only.")
         return
         
@@ -1965,7 +1962,7 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 ⏰ Valid until claimed
 
 📝 How to claim:
-1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴐᴅᴇ button
+1. Click on 🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ button
 2. Enter the code: {code}
 3. Get {amount} 🪙 credits instantly!
 
@@ -2329,14 +2326,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Edit the message to show packages again
         await show_packages(update, context)
         
+    elif query.data == "back_to_main":
+        # Clear any ongoing actions and return to main menu
+        context.user_data.pop('pagination', None)
+        context.user_data.pop('in_search_mode', None)
+        context.user_data.pop('waiting_for_gift_code', None)
+        context.user_data.pop('admin_mode', None)
+        context.user_data.pop('admin_action', None)
+        
+        try:
+            await query.edit_message_text("Choose an option:", reply_markup=get_main_keyboard())
+        except:
+            await query.message.reply_text("Choose an option:", reply_markup=get_main_keyboard())
+    
     elif query.data == "profile":
         user_id = update.effective_user.id
         users = load_users()
         user_data = users.get(str(user_id), {"credits": 0, "last_update": "N/A", "name": "Unknown"})
         await show_profile(update, context, user_id, user_data, edit_message=True)
-    
-    elif query.data == "back_to_main":
-        await query.edit_message_text("choose an option:", reply_markup=get_main_keyboard())
     
     elif query.data.startswith("full_referral_list_"):
         await handle_full_referral_list(update, context)
@@ -2456,14 +2463,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 'admin_action' in context.user_data:
             del context.user_data['admin_action']
     
-    is_admin_user = await is_admin(user_id)
+    is_admin_user = user_id == ADMIN_ID
     admin_mode = context.user_data.get('admin_mode', False)
     
     if is_admin_user and admin_mode:
         admin_buttons = [
             "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", 
             "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "📑 𝐑ᴇғᴇʀʀᴀʟ 𝐒ᴛᴀᴛs",
-            "🔒 𝐋ᴏᴄᴑ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
+            "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
             "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs", "📊 𝐒ᴛᴀᴛs", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
         ]
         
@@ -2712,7 +2719,7 @@ def main():
     app.add_handler(CommandHandler("startbot", startbot_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(verify_callback, pattern="^verify$"))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern="^(buy|buy_|paid_|approve_|reject_|back_to_packages|profile|back_to_main|full_referral_list_|copy_|page_)"))
+    app.add_handler(CallbackQueryHandler(button_handler))
     
     print("🙏 Service Is Running...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
