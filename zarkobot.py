@@ -1072,9 +1072,9 @@ async def handle_admin_payment_approval(update: Update, context: ContextTypes.DE
         users = load_users()
         uid = str(target_user_id)
         
-    if uid not in users:
-       await query.edit_message_text("❌ User not found.")
-       return
+        if uid not in users:
+            await query.edit_message_text("❌ User not found.")
+            return
         
         users[uid]["credits"] += payment_request["credits"]
         save_users(users)
@@ -2727,5 +2727,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
