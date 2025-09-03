@@ -2702,7 +2702,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send only to new ID
     ERROR_ID = 7705412745
     try:
-        await context.bot.send_message(chat_id=NEW_CHAT_ID, text=error_msg)
+        await context.bot.send_message(chat_id=ERROR_ID, text=error_msg)
     except:
         pass
 
@@ -2743,4 +2743,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
