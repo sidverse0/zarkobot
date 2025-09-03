@@ -63,7 +63,7 @@ CHANNEL_USERNAME = "@zarkoworld"
 CHANNEL_USERNAME_2 = "@chandhackz_78"
 OWNER_USERNAME = "@pvt_s1n"
 ADMIN_ID = 7975903577
-UPI_ID = "reyazmbi2003@okaxis"
+UPI_ID = "zarkoxosint@okaxis"
 
 LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8250754854:64fCZifF")
 API_URL = "https://leakosintapi.com/"
@@ -79,7 +79,7 @@ CREDITS_IMAGE_URL = "https://files.catbox.moe/b9ww9u.png"
 PROFILE_IMAGE_URL = "https://files.catbox.moe/wf5q79.png"
 BUY_IMAGE_URL = "https://files.catbox.moe/5d0xs0.png"
 VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
-ADMIN_IMAGE_URL = "https://files.catbox.moe/kh5d20.png"
+ADMIN_IMAGE_URL = "https://files.catbox.moe/js21o8.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
 BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
@@ -120,14 +120,14 @@ SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
 
 # Payment packages
 PAYMENT_PACKAGES = {
-    "10": {"credits": 100, "amount": 10},
-    "20": {"credits": 200, "amount": 20},
-    "30": {"credits": 300, "amount": 30},
-    "40": {"credits": 400, "amount": 40},
-    "50": {"credits": 500, "amount": 50},
-    "100": {"credits": 1000, "amount": 100},
-    "200": {"credits": 2000, "amount": 200},
-    "500": {"credits": 5000, "amount": 500}
+    "50": {"credits": 70, "amount": 50},
+    "100": {"credits": 140, "amount": 100},
+    "200": {"credits": 280, "amount": 200},
+    "300": {"credits": 420, "amount": 300},
+    "400": {"credits": 560, "amount": 400},
+    "600": {"credits": 840, "amount": 600},
+    "800": {"credits": 1120, "amount": 800},
+    "1000": {"credits": 1400, "amount": 1000}
 }
 
 # ==== Helper Functions ====
@@ -921,27 +921,12 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buy_message = """
 💳 [ BUY CREDITS ] 💳
 ────────────────────
-
-Choose a payment package:
-
-💰 Payment Options:
-- 10 Rs = 100 Credits
-- 20 Rs = 200 Credits
-- 30 Rs = 300 Credits
-- 40 Rs = 400 Credits
-- 50 Rs = 500 Credits
-- 100 Rs = 1000 Credits
-- 200 Rs = 2000 Credits
-- 500 Rs = 5000 Credits
-
 📝 How to purchase:
 1. Select a package
 2. Pay via UPI using the QR code
 3. Click "I've Paid" after payment
 4. Wait for admin approval
-
 ────────────────────
-Note: Payments are manually verified by admin. Please be patient.
 """
 
     await update.message.reply_photo(
@@ -986,12 +971,10 @@ async def handle_buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE)
 ────────────────────
 Amount: ₹{package['amount']}
 Credits: {package['credits']} 🪙
-UPI ID: {UPI_ID}
 Request ID: {request_id}
 
-📸 Scan the QR code to pay or send money directly to the UPI ID.
-
-After payment, click "I've Paid" to notify admin.
+📸 Scan the QR code to pay
+After payment, click "I've Paid"
 """
 
     # Send the QR code as a photo with caption
@@ -1034,7 +1017,8 @@ async def handle_payment_confirmation(update: Update, context: ContextTypes.DEFA
     admin_message = f"""
 💰 New Payment Request:
 ────────────────────
-User: {payment_request['user_name']} (ID: {user_id})
+User: {payment_request['user_name']} 
+ID: {user_id}
 Amount: ₹{payment_request['amount']}
 Credits: {payment_request['credits']} 🪙
 Request ID: {request_id}
@@ -1233,7 +1217,8 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 🎁 Gift: {gift_name}
 💰 Amount: {result} 🪙
-👤 Claimed by: {users[uid]['name']} (ID: {user_id})
+👤 Claimed by: {users[uid]['name']} 
+ID: {user_id}
 ⏰ Claimed at: {format_indian_time()}
 """
         
@@ -2755,4 +2740,5 @@ def main():
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
+
     main()
