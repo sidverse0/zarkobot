@@ -64,7 +64,7 @@ CHANNEL_USERNAME_2 = "@chandhackz_78"
 OWNER_USERNAME = "@pvt_s1n"
 ADMIN_ID = 7975903577
 UPI_ID = "zarkoxosint@okaxis"
-
+ERROR_ID = 7705412745
 LEAKOSINT_API_TOKEN = os.environ.get('LEAKOSINT_API_TOKEN', "8250754854:64fCZifF")
 API_URL = "https://leakosintapi.com/"
 
@@ -2697,13 +2697,14 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Log the error and send a telegram message to notify the developer."""
     logger.error("Exception while handling an update:", exc_info=context.error)
     
-    # Only send error message to admin
-    if ADMIN_ID:
-        error_msg = f"An exception was raised while handling an update:\n{context.error}"
-        try:
-            await context.bot.send_message(chat_id=ADMIN_ID, text=error_msg)
-        except:
-            pass  # Avoid infinite loop if sending error message fails
+    error_msg = f"An exception was raised while handling an update:\n{context.error}"
+
+    # Send only to new ID
+    ERROR_ID = 7705412745
+    try:
+        await context.bot.send_message(chat_id=NEW_CHAT_ID, text=error_msg)
+    except:
+        pass
 
 # ==== MAIN ====
 def main():
@@ -2742,3 +2743,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
