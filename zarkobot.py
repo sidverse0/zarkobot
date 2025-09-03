@@ -72,7 +72,7 @@ API_URL = "https://leakosintapi.com/"
 BOT_STOPPED = False
 
 # Image URLs
-START_IMAGE_URL = "https://files.catbox.moe/l1czk1.jpg"
+START_IMAGE_URL = "https://files.catbox.moe/szviki.jpg"
 HELP_IMAGE_URL = "https://files.catbox.moe/pajxmc.png"
 SEARCH_IMAGE_URL = "https://files.catbox.moe/slelkc.png"
 CREDITS_IMAGE_URL = "https://files.catbox.moe/q1d7t6.png"
@@ -820,13 +820,6 @@ async def show_referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
 💰 Referral Rewards:
 - For each successful referral, you get 2 🪙 credits
 - Your friend gets 2 🪙 bonus credits too!
-
-⚡ How It Works:
-1. Share your referral link with friends
-2. When they join using your link
-3. Both of you get 2 🪙 credits each
-4. Credits are added after they verify
-
 ────────────────────
 Note: Fake referrals or self-referrals are strictly prohibited and will result in account ban.
 """
@@ -2377,19 +2370,6 @@ async def show_packages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buy_message = """
 💳 [ BUY CREDITS ] 💳
 ────────────────────
-
-Choose a payment package:
-
-💰 Payment Options:
-- 10 Rs = 100 Credits
-- 20 Rs = 200 Credits
-- 30 Rs = 300 Credits
-- 40 Rs = 400 Credits
-- 50 Rs = 500 Credits
-- 100 Rs = 1000 Credits
-- 200 Rs = 2000 Credits
-- 500 Rs = 5000 Credits
-
 📝 How to purchase:
 1. Select a package
 2. Pay via UPI using the QR code
@@ -2743,6 +2723,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
