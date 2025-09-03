@@ -329,7 +329,7 @@ def log_audit_event(user_id, event_type, details):
 def get_main_keyboard():
     keyboard = [
         ["🔍 𝐒ᴇᴀʀᴄʜ", "💎 𝐂ʀᴇᴅɪᴛs", "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ"],
-        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ 𝐒ʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
+        ["🎖️ 𝐏ʀᴏғɪʟᴇ", "🛍️ Sʜᴏᴘ", "💠 𝐑ᴇғᴇʀ"],
         ["☎️ 𝐇ᴇʟᴘ", "🧧 𝐀ᴅᴍɪɴ"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, input_field_placeholder="Choose Options")
@@ -2727,6 +2727,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
