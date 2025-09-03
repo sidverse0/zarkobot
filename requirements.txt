@@ -1,8 +1,8 @@
-python-telegram-bot==20.7
-requests==2.31.0
-qrcode[pil]==7.4.2
-firebase-admin==6.2.0
-Flask==2.3.3
-pytz==2023.3
-google-cloud-firestore==2.11.1
-pillow==10.0.1
+python-telegram-bot
+requests
+qrcode
+firebase-admin
+Flask
+pytz
+google-cloud-firestore
+pillow
