@@ -1778,7 +1778,7 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data['admin_action'] = 'broadcast'
         await update.message.reply_text("📢 Send Message To Broadcast")
         
-    elif text == "🎁 𝐆ᴇɴᴅʀᴀᴛᴇ 𝐆ɪғᴛ":
+    elif text == "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ":
         context.user_data['admin_action'] = 'generate_gift'
         await update.message.reply_text("🎁 Send Amount and Name (space separated)\nExample: 5 Special Gift")
         
@@ -2536,7 +2536,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif text == "💎 𝐂ʀᴇᴅɪᴛs":
         await credits(update, context)
-    elif text == "🎁 𝐆ɪғᴛ 𝐂ᴅᴅᴇ":
+    elif text == "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ":
         await gift_code_command(update, context)
     elif text == "🎖️ 𝐏ʀᴏғɪʟᴇ":
         await me(update, context)
@@ -2743,6 +2743,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
