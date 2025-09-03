@@ -72,21 +72,21 @@ API_URL = "https://leakosintapi.com/"
 BOT_STOPPED = False
 
 # Image URLs
-START_IMAGE_URL = "https://files.catbox.moe/ppjby2.jpg"
+START_IMAGE_URL = "https://files.catbox.moe/l1czk1.jpg"
 HELP_IMAGE_URL = "https://files.catbox.moe/pajxmc.png"
-SEARCH_IMAGE_URL = "https://files.catbox.moe/6bwo6k.png"
-CREDITS_IMAGE_URL = "https://files.catbox.moe/b9ww9u.png"
-PROFILE_IMAGE_URL = "https://files.catbox.moe/wf5q79.png"
-BUY_IMAGE_URL = "https://files.catbox.moe/5d0xs0.png"
-VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
+SEARCH_IMAGE_URL = "https://files.catbox.moe/slelkc.png"
+CREDITS_IMAGE_URL = "https://files.catbox.moe/q1d7t6.png"
+PROFILE_IMAGE_URL = "https://files.catbox.moe/w2z20y.png"
+BUY_IMAGE_URL = "https://files.catbox.moe/z338pv.png"
+VERIFY_IMAGE_URL = "https://files.catbox.moe/rks15n.png"
 ADMIN_IMAGE_URL = "https://files.catbox.moe/cw7v0i.png"
-REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
-GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
-BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
-LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
+REFER_IMAGE_URL = "https://files.catbox.moe/8si34b.png"
+GIFT_IMAGE_URL = "https://files.catbox.moe/sak31u.png"
+BANNED_IMAGE_URL = "https://files.catbox.moe/w5ji21.png"
+LOCKED_IMAGE_URL = "https://files.catbox.moe/a6z7pb.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
-STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
-WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
+STOPPED_IMAGE_URL = "https://files.catbox.moe/nzc3ik.png"
+WAITING_IMAGE_URL = "https://files.catbox.moe/o9dt4k.png"
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -2743,6 +2743,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
