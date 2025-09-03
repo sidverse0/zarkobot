@@ -25,6 +25,7 @@ from firebase_admin import credentials, firestore
 from flask import Flask
 from threading import Thread
 import logging
+import pytz
 
 # Set up logging
 logging.basicConfig(
@@ -85,7 +86,7 @@ BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
 LOCKED_IMAGE_URL = "https://files.catbox.moe/ll5vrz.png"
 PAYMENT_IMAGE_URL = "https://files.catbox.moe/b6hyv7.png"
 STOPPED_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
-WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"  # Add a waiting image URL
+WAITING_IMAGE_URL = "https://files.catbox.moe/86ccxo.png"
 
 # Constants for messages
 HELP_TEXT = """[𝍖𝍖𝍖🚨 𝐇ᴇʟᴘ 🚨𝍖𝍖𝍖]
@@ -107,11 +108,11 @@ SEARCH_PROMPT_TEXT = """[𝍖𝍖𝍖🎯 𝐒ᴇᴀʀᴄʜ 🎯 𝍖𝍖𝍖]
 
 ✮📱 𝐏ʜᴏɴᴇ 𝐍ᴜᴍʙᴇʀ - 𝐒ᴇᴀʀᴄʜ 𝐍ᴏ. 𝐋ɪᴋᴇ 91XXXXXXXXXX & 79XXXXXX68
 
-✮📧 𝐄ᴍᴀɪʙ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
+✮📧 𝐄ᴍᴀɪʟ - 𝐒ᴇᴀʀᴄʜ 𝐄ᴍᴀɪʟ 𝐋ɪᴋᴇ example@gmail.com
 
-✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ �𝐴ɴʏ 𝐍ᴀᴍᴇ
+✮👤 𝐍ᴀᴍᴇ - 𝐒ᴇᴀʀᴄʜ 𝐴ɴʏ 𝐍ᴀᴍᴇ
 
-🌏 𝐈 𝐒ᴇᴀʀᴄʜ �𝐴ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
+🌏 𝐈 �Ｓᴇᴀʀᴄʜ 𝐴ᴄʀᴏss 𝐌ᴜʟᴛɪᴘʟᴇ 𝐃ᴀᴛᴀʙᴀsᴇs 📂
 ────────────────────
 ➛ 𝐄ᴀᴄʜ 𝐒ᴇᴀʀᴄʜ 𝐂ᴏsᴛ 1 𝐂ʀᴇᴅɪᴛ 💎 
 ➛ 𝐈ғ 𝐀ɴʏ 𝐐ᴜᴇʀʏ 𝐂ᴏɴᴛᴀᴄᴛ 𝐎ᴡɴᴇʀ ☎️ @Pvt_s1n
@@ -128,6 +129,17 @@ PAYMENT_PACKAGES = {
     "200": {"credits": 2000, "amount": 200},
     "500": {"credits": 5000, "amount": 500}
 }
+
+# ==== Helper Functions ====
+def get_indian_time():
+    """Get current time in Indian timezone (IST)"""
+    return datetime.now(pytz.timezone('Asia/Kolkata'))
+
+def format_indian_time(dt=None):
+    """Format datetime in Indian format (DD-MM HH:MM AM/PM)"""
+    if dt is None:
+        dt = get_indian_time()
+    return dt.strftime("%d-%m %I:%M %p")
 
 # ==== Firebase Data Functions ====
 def load_users():
@@ -249,9 +261,9 @@ def update_user(user_id, credits=None, name=None, last_verified=None, initial_cr
         users[uid] = {
             "credits": 0,
             "name": name or "Unknown", 
-            "last_update": datetime.now().strftime("%d/%m - %I:%M %p"),
+            "last_update": format_indian_time(),
             "initial_credits_given": False,
-            "join_date": datetime.now().strftime("%Y-%m-%d"),
+            "join_date": get_indian_time().strftime("%Y-%m-%d"),
             "user_hash": generate_user_hash(user_id),
             "referral_code": generate_referral_code(user_id),
             "referrals": 0,
@@ -276,7 +288,7 @@ def update_user(user_id, credits=None, name=None, last_verified=None, initial_cr
     if referred_by is not None and "referred_by" not in users[uid]:
         users[uid]["referred_by"] = referred_by
     
-    users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
+    users[uid]["last_update"] = format_indian_time()
     save_users(users)
     
     log_audit_event(user_id, "USER_UPDATE", f"Credits: {users[uid]['credits']}, Name: {users[uid]['name']}")
@@ -305,7 +317,7 @@ def save_gift_codes(gift_codes):
         print(f"Error saving gift codes to Firebase: {e}")
 
 def log_audit_event(user_id, event_type, details):
-    timestamp = datetime.now().isoformat()
+    timestamp = get_indian_time().isoformat()
     user_hash = generate_user_hash(user_id)
     
     log_entry = {
@@ -364,7 +376,7 @@ def create_gift_code(amount, name, created_by):
         "amount": amount,
         "name": name,
         "created_by": created_by,
-        "created_at": datetime.now().isoformat(),
+        "created_at": get_indian_time().isoformat(),
         "claimed_by": None,
         "claimed_at": None
     }
@@ -385,7 +397,7 @@ def claim_gift_code(code, user_id, user_name):
     
     gift["claimed_by"] = user_id
     gift["claimed_by_name"] = user_name
-    gift["claimed_at"] = datetime.now().isoformat()
+    gift["claimed_at"] = get_indian_time().isoformat()
     
     save_gift_codes(gift_codes)
     return True, gift["amount"]
@@ -456,7 +468,7 @@ def add_verification_record(user_id, success, details):
         return False
     
     record = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": get_indian_time().isoformat(),
         "success": success,
         "details": details
     }
@@ -757,7 +769,10 @@ async def show_profile(update, context, user_id=None, user_data=None, edit_messa
 """
 
     if edit_message and hasattr(update, 'callback_query'):
-        await update.callback_query.edit_message_text(profile_msg)
+        try:
+            await update.callback_query.edit_message_text(profile_msg)
+        except:
+            await update.callback_query.message.reply_text(profile_msg)
     elif hasattr(update, 'message'):
         await update.message.reply_photo(
             photo=PROFILE_IMAGE_URL, 
@@ -858,8 +873,8 @@ def create_payment_request(user_id, amount, credits):
         "amount": amount,
         "credits": credits,
         "status": "pending",
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat()
+        "created_at": get_indian_time().isoformat(),
+        "updated_at": get_indian_time().isoformat()
     }
     
     save_payment_requests(payment_requests)
@@ -870,7 +885,7 @@ def update_payment_request(request_id, status, admin_notes=None):
     
     if request_id in payment_requests:
         payment_requests[request_id]["status"] = status
-        payment_requests[request_id]["updated_at"] = datetime.now().isoformat()
+        payment_requests[request_id]["updated_at"] = get_indian_time().isoformat()
         
         if admin_notes:
             payment_requests[request_id]["admin_notes"] = admin_notes
@@ -1107,7 +1122,7 @@ Thank you for your purchase!
         
     elif action == "reject":
         # Ask admin for rejection reason
-        context.user_data['admin_action'] = f"reject_{request_id}"
+        context.user_data['reject_request_id'] = request_id
         await query.edit_message_text("Please provide a reason for rejection:")
 
 # ==== Handle Admin Payment Rejection ====
@@ -1118,11 +1133,11 @@ async def handle_admin_rejection_reason(update: Update, context: ContextTypes.DE
         await update.message.reply_text("❌ Admin only.")
         return
     
-    if 'admin_action' not in context.user_data or not context.user_data['admin_action'].startswith("reject_"):
+    if 'reject_request_id' not in context.user_data:
         await update.message.reply_text("❌ No rejection action in progress.")
         return
     
-    request_id = context.user_data['admin_action'].split("_")[1]
+    request_id = context.user_data['reject_request_id']
     reason = update.message.text
     
     payment_requests = load_payment_requests()
@@ -1159,7 +1174,7 @@ If you believe this is a mistake, please contact {OWNER_USERNAME}.
     await update.message.reply_text("✅ Payment rejected. User has been notified.")
     
     # Clear admin action
-    context.user_data['admin_action'] = None
+    context.user_data.pop('reject_request_id', None)
 
 # ==== Gift Code Function ====
 async def gift_code_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1202,7 +1217,7 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if success:
         users[uid]["credits"] += result
-        users[uid]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
+        users[uid]["last_update"] = format_indian_time()
         
         if "claimed_gift_codes" not in users[uid]:
             users[uid]["claimed_gift_codes"] = []
@@ -1219,7 +1234,7 @@ async def process_gift_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🎁 Gift: {gift_name}
 💰 Amount: {result} 🪙
 👤 Claimed by: {users[uid]['name']} (ID: {user_id})
-⏰ Claimed at: {datetime.now().strftime('%d/%m - %I:%M %p')}
+⏰ Claimed at: {format_indian_time()}
 """
         
         await broadcast_to_all_users(context, broadcast_msg)
@@ -1608,7 +1623,7 @@ async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     banned_users[uid] = {
         "reason": reason,
         "banned_by": user_id,
-        "banned_at": datetime.now().isoformat()
+        "banned_at": get_indian_time().isoformat()
     }
     
     save_banned_users(banned_users)
@@ -1778,7 +1793,7 @@ async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data['admin_action'] = 'broadcast'
         await update.message.reply_text("📢 Send Message To Broadcast")
         
-    elif text == "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ":
+    elif text == "🎁 𝐆ᴇɴᴅʀᴀᴛᴇ 𝐆ɪғᴛ":
         context.user_data['admin_action'] = 'generate_gift'
         await update.message.reply_text("🎁 Send Amount and Name (space separated)\nExample: 5 Special Gift")
         
@@ -2039,7 +2054,7 @@ Hurry up! First come first served.
             banned_users[uid] = {
                 "reason": reason,
                 "banned_by": user_id,
-                "banned_at": datetime.now().isoformat()
+                "banned_at": get_indian_time().isoformat()
             }
             
             save_banned_users(banned_users)
@@ -2116,6 +2131,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop('waiting_for_gift_code', None)
     context.user_data.pop('admin_mode', None)
     context.user_data.pop('admin_action', None)
+    context.user_data.pop('reject_request_id', None)
     
     if is_user_banned(user_id):
         banned_users = load_banned_users()
@@ -2150,7 +2166,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not user_data:
             user_data = update_user(user_id, credits=2, 
                                   name=name, 
-                                  last_verified=datetime.now().isoformat(),
+                                  last_verified=get_indian_time().isoformat(),
                                   initial_credits_given=True,
                                   referred_by=referred_by)
             
@@ -2225,7 +2241,7 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_member:
         if not user_data:
             user_data = update_user(user_id, credits=2, name=name, 
-                                  last_verified=datetime.now().isoformat(),
+                                  last_verified=get_indian_time().isoformat(),
                                   initial_credits_given=True)
             add_verification_record(user_id, True, "New user - initial credits granted via verify")
             
@@ -2245,7 +2261,7 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             if not user_data.get("initial_credits_given", False):
                 user_data = update_user(user_id, credits=user_data.get("credits", 0) + 2, 
-                                      name=name, last_verified=datetime.now().isoformat(),
+                                      name=name, last_verified=get_indian_time().isoformat(),
                                       initial_credits_given=True)
                 add_verification_record(user_id, True, "Existing user - initial credits granted via verify")
                 
@@ -2263,7 +2279,7 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
             else:
                 user_data = update_user(user_id, name=name, 
-                                      last_verified=datetime.now().isoformat())
+                                      last_verified=get_indian_time().isoformat())
                 add_verification_record(user_id, True, "Existing user - reverified")
                 
                 try:
@@ -2333,9 +2349,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.pop('waiting_for_gift_code', None)
         context.user_data.pop('admin_mode', None)
         context.user_data.pop('admin_action', None)
+        context.user_data.pop('reject_request_id', None)
         
         try:
-            await query.edit_message_text("Choose an option:", reply_markup=get_main_keyboard())
+            await query.message.reply_text("Choose an option:", reply_markup=get_main_keyboard())
         except:
             await query.message.reply_text("Choose an option:", reply_markup=get_main_keyboard())
     
@@ -2400,10 +2417,16 @@ Note: Payments are manually verified by admin. Please be patient.
 
     # Check if it's a callback query or message
     if hasattr(update, 'callback_query') and update.callback_query:
-        await update.callback_query.edit_message_text(
-            text=buy_message,
-            reply_markup=reply_markup
-        )
+        try:
+            await update.callback_query.edit_message_text(
+                text=buy_message,
+                reply_markup=reply_markup
+            )
+        except:
+            await update.callback_query.message.reply_text(
+                text=buy_message,
+                reply_markup=reply_markup
+            )
     else:
         await update.message.reply_text(
             text=buy_message,
@@ -2462,6 +2485,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['admin_mode'] = False
         if 'admin_action' in context.user_data:
             del context.user_data['admin_action']
+        if 'reject_request_id' in context.user_data:
+            del context.user_data['reject_request_id']
     
     is_admin_user = user_id == ADMIN_ID
     admin_mode = context.user_data.get('admin_mode', False)
@@ -2470,7 +2495,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admin_buttons = [
             "🃏 𝐀ᴅᴅ 𝐂ʀᴇᴅɪᴛs", "💶 𝐒ᴇᴛ 𝐂ʀᴇᴅɪᴛs", "🏅 𝐔sᴇʀ 𝐈ɴғᴏ", 
             "📮 𝐁ʀᴏᴀᴅᴄᴀsᴛ", "🎁 𝐆ᴇɴᴇʀᴀᴛᴇ 𝐆ɪғᴛ", "💰 𝐏ᴀʏᴍᴇɴᴛ 𝐑ᴇǫᴜᴇsᴛs",
-            "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
+            "🔒 𝐋ᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🔓 𝐔ɴʜʟᴏᴄᴋ 𝐅ᴇᴀᴛᴜʀᴇs", "🚫 𝐁ᴀɴ 𝐔sᴇʀ",
             "🟢 𝐒ᴛᴀʀᴛ 𝐁ᴏᴛ", "🔴 𝐒ᴛᴏᴩ 𝐁ᴏᴛ", "🎲 𝐌ᴀɪɴ 𝐌ᴇɴᴜ"
         ]
         
@@ -2479,6 +2504,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         elif 'admin_action' in context.user_data:
             await handle_admin_input(update, context)
+            return
+        elif 'reject_request_id' in context.user_data:
+            await handle_admin_rejection_reason(update, context)
             return
         else:
             await update.message.reply_text("👑 Admin Panel", reply_markup=get_admin_keyboard())
@@ -2523,7 +2551,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif text == "💎 𝐂ʀᴇᴅɪᴛs":
         await credits(update, context)
-    elif text == "🎁 𝐆ɪғᴛ 𝐂ᴏᴅᴇ":
+    elif text == "🎁 𝐆ɪғᴛ 𝐂ᴅᴅᴇ":
         await gift_code_command(update, context)
     elif text == "🎖️ 𝐏ʀᴏғɪʟᴇ":
         await me(update, context)
@@ -2579,7 +2607,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if "No Data" not in pages[0] and "SERVER" not in pages[0] and "Error" not in result:
         users[str(user_id)]["credits"] -= 1
-        users[str(user_id)]["last_update"] = datetime.now().strftime("%d/%m - %I:%M %p")
+        users[str(user_id)]["last_update"] = format_indian_time()
         save_users(users)
         
         log_audit_event(user_id, "SEARCH", f"Query: {query}, Success: True, Credits left: {users[str(user_id)]['credits']}")
@@ -2663,13 +2691,15 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💰 Pending Payments ➜ {pending_requests}
 🔒 Locked Features ➜ {', '.join(locked_features_list) if locked_features_list else 'None'}
 📊 Bot Status ➜ {bot_status}
-🔄 Updated ➜ {datetime.now().strftime('%d/%m - %I:%M %p')}
+🔄 Updated ➜ {format_indian_time()}
 
 """
 
     context.user_data['admin_mode'] = True
     if 'admin_action' in context.user_data:
         del context.user_data['admin_action']
+    if 'reject_request_id' in context.user_data:
+        del context.user_data['reject_request_id']
     
     await update.message.reply_photo(
         photo=ADMIN_IMAGE_URL, 
@@ -2725,12 +2755,4 @@ def main():
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
-
     main()
-
-
-
-
-
-
-
