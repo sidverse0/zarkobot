@@ -79,7 +79,7 @@ CREDITS_IMAGE_URL = "https://files.catbox.moe/b9ww9u.png"
 PROFILE_IMAGE_URL = "https://files.catbox.moe/wf5q79.png"
 BUY_IMAGE_URL = "https://files.catbox.moe/5d0xs0.png"
 VERIFY_IMAGE_URL = "https://files.catbox.moe/pvqg1l.png"
-ADMIN_IMAGE_URL = "https://files.catbox.moe/js21o8.png"
+ADMIN_IMAGE_URL = "https://files.catbox.moe/cw7v0i.png"
 REFER_IMAGE_URL = "https://files.catbox.moe/oatkv3.png"
 GIFT_IMAGE_URL = "https://files.catbox.moe/ytbj2s.png"
 BANNED_IMAGE_URL = "https://files.catbox.moe/2c88t0.png"
@@ -2743,5 +2743,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
