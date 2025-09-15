@@ -709,18 +709,18 @@ def format_results(resp: Dict, max_length=4000):
             
             # Format the result entry
             result_entry = f"""
-👤 Name ➜ {name}
-👨 Father's Name ➜ {father}
-📞 Mobile ➜ {mobile}
-📱 Alt Number1 ➜ {alt1}
-📱 Alt Number2 ➜ {alt2}
-📱 Alt Number3 ➜ {alt3}
-📱 Alt Number4 ➜ {alt4}
-📱 Alt Number5 ➜ {alt5}
-📧 Email ➜ {email}
-🆔 Aadhar ID ➜ {doc}
-📍 Circle ➜ {region}
-🏠 Address ➜ {address}
+👤 Nᴀᴍᴇ ➤ {name}
+🧓 Fᴀᴛʜᴇʀ's Nᴀᴍᴇ ➤ {father}
+📞 Mᴏʙɪʟᴇ ➤ {mobile}
+📲 Aʟᴛ Nᴜᴍʙᴇʀ1 ➤ {alt1}
+📲 Aʟᴛ Nᴜᴍʙᴇʀ2 ➤ {alt2}
+📲 Aʟᴛ Nᴜᴍʙᴇʀ3 ➤ {alt3}
+📲 Aʟᴛ Nᴜᴍʙᴇʀ4 ➤ {alt4}
+📲 Aʟᴛ Nᴜᴍʙᴇʀ5 ➤ {alt5}
+📧 Eᴍᴀɪʟ ➤ {email}
+🪪 Aᴀᴅʜᴀʀ ID ➤ {doc}
+🧭 Cɪʀᴄʟᴇ ➤ {region}
+🏠 Aᴅᴅʀᴇss ➤ {address}
 ────────────────────
 """
             
@@ -2735,6 +2735,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
