@@ -612,7 +612,6 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
     return True
 
 # ==== API Query ====
-query_stormx
 def query_stormx(query: str) -> Dict:
     # Only support phone number search
     params = {"key": "dark", "number": query}
@@ -2744,6 +2743,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
