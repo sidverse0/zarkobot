@@ -698,7 +698,6 @@ def format_results(resp: Dict, max_length=4000):
             
             # Handle alternate numbers (list format in Stormx)
             alt_numbers = row.get("Phone2", [])
-            alt1 = alt_numbers[0] if len(alt_numbers) > 0 else "N/A"
             alt2 = alt_numbers[1] if len(alt_numbers) > 1 else "N/A"
             alt3 = alt_numbers[2] if len(alt_numbers) > 2 else "N/A"
             alt4 = alt_numbers[3] if len(alt_numbers) > 3 else "N/A"
@@ -727,7 +726,7 @@ def format_results(resp: Dict, max_length=4000):
 📱 Alt Number5 ➜ {alt5}
 📧 Email ➜ {email}
 🆔 Aadhar ID ➜ {doc}
-📍 City ➜ {region}
+📍 Circle ➜ {region}
 🏠 Address ➜ {address}
 ────────────────────
 """
@@ -2743,6 +2742,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
