@@ -66,7 +66,7 @@ OWNER_USERNAME = "@pvt_s1n"
 ADMIN_ID = 7975903577
 UPI_ID = "zarkoxosint@okaxis"
 ERROR_ID = 7705412745
-STORMX_API_URL = "https://osint.stormx.pw/index.cpp"
+STORMX_API_URL = "https://reviewrise.ct.ws/info.php"
 
 # Bot status
 BOT_STOPPED = False
@@ -605,11 +605,11 @@ async def force_membership_check(update: Update, context: ContextTypes.DEFAULT_T
 
 # ==== API Query ====
 def query_stormx(query: str) -> Dict:
-    # Only support phone number search
-    params = {"key": "dark", "number": query}
+    # Build the URL with the number parameter
+    url = f"{STORMX_API_URL}?num={query}"
     
     try:
-        resp = requests.get(STORMX_API_URL, params=params, timeout=60)
+        resp = requests.get(url, timeout=60)
         resp.raise_for_status()
         data = resp.json()
         
@@ -632,7 +632,7 @@ def query_stormx(query: str) -> Dict:
         for entry in processed_data:
             # Parse all phone numbers
             mobile_numbers = parse_phone_numbers(entry.get('mobile', ''))
-            alt_numbers = parse_phone_numbers(entry.get('alt', ''))
+            alt_numbers = parse_phone_numbers(entry.get('alt_mobile', ''))
             
             # Determine which number is the searched one
             all_numbers = mobile_numbers + alt_numbers
@@ -653,7 +653,7 @@ def query_stormx(query: str) -> Dict:
             alternate_numbers = all_numbers[:5]
             
             mapped_entry = {
-                "FatherName": entry.get('fname', 'N/A'),
+                "FatherName": entry.get('father_name', 'N/A'),
                 "FullName": entry.get('name', 'N/A'),
                 "Phone": primary_number,
                 "Phone2": alternate_numbers,  # List of alternate numbers
@@ -668,7 +668,6 @@ def query_stormx(query: str) -> Dict:
     except Exception as exc:
         logger.error("API request failed: %s", exc)
         return {"Error": "Network error"}
-
 
 # ==== Format Result ====
 def format_results(resp: Dict, max_length=4000):
@@ -2735,6 +2734,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
